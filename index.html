@@ -46,7 +46,13 @@ http://www.tooplate.com/view/2088-big-city
             <div class="cd-slider-nav">
                 <div class="container">
                     <nav class="navbar">
-                        <div class="tm-navbar-bg">                            
+                        <div class="tm-navbar-bg">  
+							<style>
+    /* Це примусово змінить колір смуги на червоний */
+    .tm-navbar-bg {
+        background-color: #ff0000 !important; /* Ваш червоний колір */
+    }
+</style>
                             <a class="navbar-brand text-uppercase" href="#">М.Закревського 101Б</a>
                             <button class="navbar-toggler hidden-lg-up" type="button" data-toggle="collapse" data-target="#tmNavbar">
                                 &#9776;
@@ -164,47 +170,38 @@ http://www.tooplate.com/view/2088-big-city
 </div>
 
 <script>
-    // Актуальні дані з вашого скріншота за 22.02.2026
-    const todayData = [
-        {start: 0, end: 120, type: "Definite", grp: "1.1"},    // 00:00 - 02:00
-        {start: 120, end: 690, type: "NotPlanned", grp: "1.1"}, // 02:00 - 11:30
-        {start: 690, end: 930, type: "Definite", grp: "1.1"},   // 11:30 - 15:30
-        {start: 930, end: 1350, type: "NotPlanned", grp: "1.1"},// 15:30 - 22:30
-        {start: 1350, end: 1440, type: "Definite", grp: "1.1"}  // 22:30 - 00:00
+    // Дані відключень (з вашого скріншота)
+    const powerSchedule = [
+        {start: 0, end: 120, type: "Definite"},    // 00:00 - 02:00 (ЗАРАЗ ТУТ)
+        {start: 120, end: 690, type: "NotPlanned"},
+        {start: 690, end: 930, type: "Definite"},
+        {start: 930, end: 1350, type: "NotPlanned"},
+        {start: 1350, end: 1440, type: "Definite"}
     ];
 
-    function formatTime(mins) {
-        let h = Math.floor(mins / 60);
-        let m = mins % 60;
-        return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
-    }
-
-    function updateTable() {
-        const tbody = document.getElementById('outage-tbody');
+    function updateHouseVisuals() {
         const now = new Date();
-        const currentMins = now.getHours() * 60 + now.getMinutes();
+        const mins = now.getHours() * 60 + now.getMinutes();
+        const currentSlot = powerSchedule.find(s => mins >= s.start && mins < s.end);
         
-        let rows = "";
-        todayData.forEach(slot => {
-            const isOff = slot.type === "Definite";
-            const isNow = currentMins >= slot.start && currentMins < slot.end;
-            
-            rows += `
-                <tr class="${isNow ? 'current-row' : ''}">
-                    <td><span class="group-tag">${slot.grp}</span></td>
-                    <td>${formatTime(slot.start)} — ${formatTime(slot.end)}</td>
-                    <td class="${isOff ? 'status-no' : 'status-yes'}">
-                        ${isOff ? '🌑 Немає світла' : '💡 Світло є'}
-                    </td>
-                </tr>
-            `;
-        });
-        tbody.innerHTML = rows;
+        // Знаходимо саме той контейнер, який ви бачили в коді
+        const videoWrapper = document.querySelector('.cd-bg-video-wrapper');
+
+        if (videoWrapper) {
+            if (currentSlot && currentSlot.type === "Definite") {
+                // Ефект відключеного світла: темно і трохи сіро
+                videoWrapper.style.filter = "brightness(0.2) contrast(1.2) grayscale(0.5)";
+                videoWrapper.style.transition = "filter 2s ease-in-out";
+            } else {
+                // Світло є: повна яскравість
+                videoWrapper.style.filter = "brightness(1)";
+            }
+        }
     }
 
-    updateTable();
-    setInterval(updateTable, 30000); // Оновлення кожні 30 сек
-</script>                                            
+    // Запускаємо відразу при завантаженні сторінки
+    updateHouseVisuals();
+</script>                                          
                                             </div>    
                                         </div>
                                         <div class="col-lg-6 tm-white-header-container-outer tm-margin-b tm-2-col-right">
@@ -573,6 +570,7 @@ http://www.tooplate.com/view/2088-big-city
 </body>
 
 </html>
+
 
 
 
