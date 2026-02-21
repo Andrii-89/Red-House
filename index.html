@@ -113,82 +113,97 @@ http://www.tooplate.com/view/2088-big-city
                                             </div>
                                             <div class="tm-bg-dark-blue text-xs-left tm-textbox tm-textbox-padding tm-white-header-body tm-white-border tm-2-col-equal-height">
                                                 <style>
+    .outage-container {
+        margin-top: 20px;
+        overflow-x: auto;
+    }
     .outage-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 20px;
-        color: white;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 10px;
         font-family: sans-serif;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-        overflow: hidden;
     }
-    .outage-table th, .outage-table td {
+    .outage-table th {
+        background: rgba(255, 255, 255, 0.1);
         padding: 12px;
         text-align: left;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 13px;
     }
-    .outage-table th { background: rgba(255, 255, 255, 0.1); font-weight: bold; }
-    
-    /* Кольори статусів */
-    .status-yes { color: #4caf50; font-weight: bold; } /* Світло є */
-    .status-no { color: #f44336; font-weight: bold; }  /* Світла немає */
-    .current-row { background: rgba(255, 255, 0, 0.15) !important; } /* Підсвітка зараз */
+    .outage-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .status-yes { color: #44ff44; }
+    .status-no { color: #ff4444; font-weight: bold; }
+    .current-row { 
+        background: rgba(255, 215, 0, 0.15) !important;
+        outline: 1px solid rgba(255, 215, 0, 0.3);
+    }
+    .group-tag {
+        background: #007bff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+    }
 </style>
 
-<table class="outage-table">
-    <thead>
-        <tr>
-            <th>Час</th>
-            <th>Статус</th>
-        </tr>
-    </thead>
-    <tbody id="outage-tbody">
-        </tbody>
-</table>
+<div class="outage-container">
+    <table class="outage-table">
+        <thead>
+            <tr>
+                <th>Черга</th>
+                <th>Час</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody id="outage-tbody">
+            </tbody>
+    </table>
+</div>
 
 <script>
-    // Дані з твого скріншоту (image_d9895c.png)
-    const rawData = [
-        {start: 0, end: 210, type: "NotPlanned"},
-        {start: 210, end: 450, type: "Definite"},
-        {start: 450, end: 930, type: "NotPlanned"},
-        {start: 930, end: 1140, type: "Definite"},
-        {start: 1140, end: 1440, type: "NotPlanned"}
+    // Актуальні дані з вашого скріншота за 22.02.2026
+    const todayData = [
+        {start: 0, end: 120, type: "Definite", grp: "6.1"},    // 00:00 - 02:00
+        {start: 120, end: 690, type: "NotPlanned", grp: "6.1"}, // 02:00 - 11:30
+        {start: 690, end: 930, type: "Definite", grp: "6.1"},   // 11:30 - 15:30
+        {start: 930, end: 1350, type: "NotPlanned", grp: "6.1"},// 15:30 - 22:30
+        {start: 1350, end: 1440, type: "Definite", grp: "6.1"}  // 22:30 - 00:00
     ];
 
-    function minutesToTime(mins) {
+    function formatTime(mins) {
         let h = Math.floor(mins / 60);
         let m = mins % 60;
         return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
     }
 
-    function renderTable() {
+    function updateTable() {
         const tbody = document.getElementById('outage-tbody');
         const now = new Date();
         const currentMins = now.getHours() * 60 + now.getMinutes();
         
-        let html = "";
-        
-        rawData.forEach(slot => {
-            const isNoPower = slot.type === "Definite";
-            const isCurrent = currentMins >= slot.start && currentMins < slot.end;
+        let rows = "";
+        todayData.forEach(slot => {
+            const isOff = slot.type === "Definite";
+            const isNow = currentMins >= slot.start && currentMins < slot.end;
             
-            html += `
-                <tr class="${isCurrent ? 'current-row' : ''}">
-                    <td>${minutesToTime(slot.start)} — ${minutesToTime(slot.end)}</td>
-                    <td class="${isNoPower ? 'status-no' : 'status-yes'}">
-                        ${isNoPower ? '🌑 Світла немає' : '💡 Світло є'}
+            rows += `
+                <tr class="${isNow ? 'current-row' : ''}">
+                    <td><span class="group-tag">${slot.grp}</span></td>
+                    <td>${formatTime(slot.start)} — ${formatTime(slot.end)}</td>
+                    <td class="${isOff ? 'status-no' : 'status-yes'}">
+                        ${isOff ? '🌑 Немає світла' : '💡 Світло є'}
                     </td>
                 </tr>
             `;
         });
-        
-        tbody.innerHTML = html;
+        tbody.innerHTML = rows;
     }
 
-    // Запуск при завантаженні сторінки
-    renderTable();
+    updateTable();
+    setInterval(updateTable, 30000); // Оновлення кожні 30 сек
 </script>                                            
                                             </div>    
                                         </div>
@@ -558,6 +573,7 @@ http://www.tooplate.com/view/2088-big-city
 </body>
 
 </html>
+
 
 
 
