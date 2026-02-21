@@ -31,6 +31,17 @@ http://www.tooplate.com/view/2088-big-city
           <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
           <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
           <![endif]-->
+	<style>
+    /* Червона верхня панель */
+    .tm-navbar-bg { background-color: #ff0000 !important; }
+    
+    /* Кольори статусів у таблиці */
+    .status-on { color: #44ff44; font-weight: bold; }
+    .status-off { color: #ff4444; font-weight: bold; }
+    
+    /* Підсвітка поточного часу */
+    .row-active { background: rgba(255, 215, 0, 0.15); border-left: 3px solid gold; }
+</style>
 </head>
 
     <body>
@@ -92,7 +103,20 @@ http://www.tooplate.com/view/2088-big-city
                                                 <h2 class="tm-text-title text-xs-center tm-home-title">Ласкаво просимо на сайт нашого будинку!</h2>    
                                             </div>
                                             <div class="tm-home-description-container tm-bg-dark-blue">
-                                                <div class="text-xs-left tm-textbox">                                            
+                                                <div class="tm-bg-dark-blue text-xs-left tm-textbox tm-textbox-padding">
+    <h2 class="tm-text-title">Графіки відключень електроенергії</h2>
+    <table style="width:100%; color:white; border-collapse: collapse; margin-top: 15px;">
+        <thead>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.3); text-align: left;">
+                <th style="padding: 10px;">Група</th>
+                <th style="padding: 10px;">Час</th>
+                <th style="padding: 10px;">Статус</th>
+            </tr>
+        </thead>
+        <tbody id="outage-tbody">
+            </tbody>
+    </table>
+</div>                                           
                                                     <p class="tm-text tm-home-description">Big City HTML CSS Template is provided by Tooplate website. Feel free to use this layout for your web projects. Please tell your friends about Tooplate. Thank you. Video BG credit: <a href="https://youtu.be/OeBdM7tykUg" target="_blank">Bangkok Sunset</a></p>
                                                     <p class="tm-text tm-home-description">Quisque mattis pellentesque diam eu vestibulum. Pellentesque augue urna, ultrices sit amet luctus eget, ultricies sit amet ipsum. Nulla sem nisi, commodo sed auctor sed, euismod nec dui. Morbi vitae enim id massa sodales tincidunt a et mi.</p>
                                                 </div>
@@ -579,6 +603,7 @@ http://www.tooplate.com/view/2088-big-city
 </body>
 
 </html>
+
 
 
 
