@@ -170,38 +170,47 @@ http://www.tooplate.com/view/2088-big-city
 </div>
 
 <script>
-    // Дані за 22.02.2026 з твого скріншоту
+    // Актуальні дані з вашого скріншота за 22.02.2026
     const todayData = [
-        {start: 0, end: 120, type: "Definite"},    // 00:00 - 02:00 (Немає світла)
-        {start: 120, end: 690, type: "NotPlanned"}, // 02:00 - 11:30 (Є світло)
-        {start: 690, end: 930, type: "Definite"},   // 11:30 - 15:30 (Немає світла)
-        {start: 930, end: 1350, type: "NotPlanned"},// 15:30 - 22:30 (Є світло)
-        {start: 1350, end: 1440, type: "Definite"}  // 22:30 - 00:00 (Немає світла)
+        {start: 0, end: 120, type: "Definite", grp: "1.1"},    // 00:00 - 02:00
+        {start: 120, end: 690, type: "NotPlanned", grp: "1.1"}, // 02:00 - 11:30
+        {start: 690, end: 930, type: "Definite", grp: "1.1"},   // 11:30 - 15:30
+        {start: 930, end: 1350, type: "NotPlanned", grp: "1.1"},// 15:30 - 22:30
+        {start: 1350, end: 1440, type: "Definite", grp: "1.1"}  // 22:30 - 00:00
     ];
 
-    function updateHouseVisuals() {
-        const now = new Date();
-        const mins = now.getHours() * 60 + now.getMinutes();
-        const currentSlot = powerSchedule.find(s => mins >= s.start && mins < s.end);
-        
-        // Знаходимо саме той контейнер, який ви бачили в коді
-        const videoWrapper = document.querySelector('.cd-bg-video-wrapper');
-
-        if (videoWrapper) {
-            if (currentSlot && currentSlot.type === "Definite") {
-                // Ефект відключеного світла: темно і трохи сіро
-                videoWrapper.style.filter = "brightness(0.2) contrast(1.2) grayscale(0.5)";
-                videoWrapper.style.transition = "filter 2s ease-in-out";
-            } else {
-                // Світло є: повна яскравість
-                videoWrapper.style.filter = "brightness(1)";
-            }
-        }
+    function formatTime(mins) {
+        let h = Math.floor(mins / 60);
+        let m = mins % 60;
+        return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
     }
 
-    // Запускаємо відразу при завантаженні сторінки
-    updateHouseVisuals();
-</script>                                          
+    function updateTable() {
+        const tbody = document.getElementById('outage-tbody');
+        const now = new Date();
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+        
+        let rows = "";
+        todayData.forEach(slot => {
+            const isOff = slot.type === "Definite";
+            const isNow = currentMins >= slot.start && currentMins < slot.end;
+            
+            rows += `
+                <tr class="${isNow ? 'current-row' : ''}">
+                    <td><span class="group-tag">${slot.grp}</span></td>
+                    <td>${formatTime(slot.start)} — ${formatTime(slot.end)}</td>
+                    <td class="${isOff ? 'status-no' : 'status-yes'}">
+                        ${isOff ? '🌑 Немає світла' : '💡 Світло є'}
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = rows;
+    }
+
+    updateTable();
+    setInterval(updateTable, 30000); // Оновлення кожні 30 сек
+</script>                                         
                                             </div>    
                                         </div>
                                         <div class="col-lg-6 tm-white-header-container-outer tm-margin-b tm-2-col-right">
@@ -570,6 +579,7 @@ http://www.tooplate.com/view/2088-big-city
 </body>
 
 </html>
+
 
 
 
