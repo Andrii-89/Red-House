@@ -170,13 +170,13 @@ http://www.tooplate.com/view/2088-big-city
 </div>
 
 <script>
-    // Дані відключень (з вашого скріншота)
-    const powerSchedule = [
-        {start: 0, end: 120, type: "Definite"},    // 00:00 - 02:00 (ЗАРАЗ ТУТ)
-        {start: 120, end: 690, type: "NotPlanned"},
-        {start: 690, end: 930, type: "Definite"},
-        {start: 930, end: 1350, type: "NotPlanned"},
-        {start: 1350, end: 1440, type: "Definite"}
+    // Дані за 22.02.2026 з твого скріншоту
+    const todayData = [
+        {start: 0, end: 120, type: "Definite"},    // 00:00 - 02:00 (Немає світла)
+        {start: 120, end: 690, type: "NotPlanned"}, // 02:00 - 11:30 (Є світло)
+        {start: 690, end: 930, type: "Definite"},   // 11:30 - 15:30 (Немає світла)
+        {start: 930, end: 1350, type: "NotPlanned"},// 15:30 - 22:30 (Є світло)
+        {start: 1350, end: 1440, type: "Definite"}  // 22:30 - 00:00 (Немає світла)
     ];
 
     function updateHouseVisuals() {
@@ -570,6 +570,7 @@ http://www.tooplate.com/view/2088-big-city
 </body>
 
 </html>
+
 
 
 
