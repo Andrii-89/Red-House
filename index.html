@@ -500,41 +500,44 @@ http://www.tooplate.com/view/2088-big-city
 
 <script>
 const MY_GROUP = "1.1";
-// Використовуємо стабільне дзеркало даних, яке не блокує запити
-const API_URL = "https://raw.githubusercontent.com/the-m-v-a/yasno-data/main/kyiv.json";
+// Використовуємо стабільне дзеркало API, яке оновлюється автоматично
+const STABLE_API = "https://energy-api.kyiv.ua/v1/schedule/kyiv";
 
-async function fetchStablePowerData() {
+async function fetchLivePowerData() {
     const tbody = document.getElementById('outage-tbody');
     
-    if (tbody.innerHTML.trim() === "" || tbody.innerText.includes("затримка")) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Підключення до дзеркала даних...</td></tr>';
+    // Показуємо статус, якщо таблиця порожня
+    if (!tbody.innerText.includes("Є") && !tbody.innerText.includes("Немає")) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Підключення до стабільного джерела...</td></tr>';
     }
 
     try {
-        // Прямий запит до JSON-файлу (його ніколи не блокують)
-        const response = await fetch(API_URL + "?nocache=" + Date.now());
-        if (!response.ok) throw new Error("Mirror offline");
+        // Використовуємо надійний проксі для доступу до дзеркала
+        const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(STABLE_API) + "&cache=" + Date.now();
+        const response = await fetch(proxyUrl);
+        const json = await response.json();
+        const data = JSON.parse(json.contents);
         
-        const data = await response.json();
-        
-        if (data && data.schedule) {
-            const groupData = data.schedule.find(s => s.group === MY_GROUP);
-            if (groupData) {
-                renderLiveTable(processIntervals(groupData.hours));
-                return;
+        if (data && data.groups) {
+            const groupInfo = data.groups.find(g => g.name === MY_GROUP);
+            if (groupInfo) {
+                renderFullTable(processHours(groupInfo.hours));
+                return; // Успіх!
             }
         }
+        throw new Error("Data parse error");
     } catch (e) {
-        console.error("Помилка дзеркала:", e);
+        console.error("Спроба не вдалася:", e);
+        // Залишаємо інформативне повідомлення
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px; color:#ff6b6b;">
-            ⚠️ Оновлення бази даних...<br>
-            <small>Спробуємо з'єднатися через 10 секунд</small>
+            ⚠️ Сервер Yasno оновлює графіки...<br>
+            <small>Автоматична спроба через 15 секунд</small>
         </td></tr>`;
-        setTimeout(fetchStablePowerData, 10000);
+        setTimeout(fetchLivePowerData, 15000);
     }
 }
 
-function processIntervals(hours) {
+function processHours(hours) {
     let intervals = [];
     let start = 0;
     for (let i = 1; i <= 24; i++) {
@@ -546,16 +549,16 @@ function processIntervals(hours) {
     return intervals;
 }
 
-function renderLiveTable(intervals) {
+function renderFullTable(intervals) {
     const tbody = document.getElementById('outage-tbody');
     const nowHr = new Date().getHours();
     let rows = "";
-    let isDark = false;
+    let isCurrentlyDark = false;
 
     intervals.forEach(slot => {
         const isActive = nowHr >= slot.s && nowHr < slot.e;
         const isOff = (slot.status === 'off' || slot.status === 2 || slot.status === '2');
-        if (isActive && isOff) isDark = true;
+        if (isActive && isOff) isCurrentlyDark = true;
 
         const timeStr = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
         rows += `
@@ -570,20 +573,24 @@ function renderLiveTable(intervals) {
     
     tbody.innerHTML = rows;
     
-    // Керування атмосферою сайту
+    // Автоматична зміна настрою сайту
     const bg = document.querySelector('.cd-bg-video-wrapper');
-    if (bg) bg.style.filter = isDark ? "brightness(0.3) contrast(1.1)" : "brightness(1)";
+    if (bg) {
+        bg.style.transition = "filter 2s ease";
+        bg.style.filter = isCurrentlyDark ? "brightness(0.2) contrast(1.1)" : "brightness(1)";
+    }
 }
 
-// Запуск та оновлення кожні 10 хвилин
-fetchStablePowerData();
-setInterval(fetchStablePowerData, 600000);
+// Початковий запуск та перевірка кожні 10 хвилин
+fetchLivePowerData();
+setInterval(fetchLivePowerData, 600000);
 </script>
 
 		
 </body>
 
 </html>
+
 
 
 
