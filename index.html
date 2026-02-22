@@ -502,49 +502,42 @@ http://www.tooplate.com/view/2088-big-city
 			<script>
 const MY_GROUP = "1.1";
 
-async function fetchLiveSchedule() {
+async function fetchAutomatedSchedule() {
     const tbody = document.getElementById('outage-tbody');
-    // Повідомляємо користувача про процес
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Синхронізація з Yasno...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Отримання актуального графіку...</td></tr>';
 
-    const target = "https://yasno.com.ua/api/v1/pages/schedule/kyiv";
-    // Використовуємо corsproxy.io — він наразі краще обходить блокування
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(target)}?cache=${Date.now()}`;
+    // Використовуємо відкрите API для графіків (на базі даних Yasno/ДТЕК)
+    const url = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://vps.poverkh.net/api/v1/get_kyiv_schedule");
 
     try {
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error("Proxy error");
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("API Offline");
         
-        const data = await response.json();
+        const raw = await response.json();
+        const data = JSON.parse(raw.contents);
         
-        if (data && data.schedule) {
-            const groupData = data.schedule.find(s => s.group === MY_GROUP);
+        // Знаходимо нашу групу в отриманих даних
+        if (data && data.groups) {
+            const groupData = data.groups.find(g => g.name === MY_GROUP);
             if (groupData) {
-                render(groupData.hours);
-                console.log("Дані успішно оновлено автоматично");
+                render(processData(groupData.hours));
                 return;
             }
         }
-        throw new Error("Invalid data format");
+        throw new Error("Format Error");
     } catch (e) {
-        console.error("Помилка:", e);
+        console.error("Помилка синхронізації:", e);
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px; color:#ff6b6b;">
-            ⚠️ Сервер Yasno відхилив запит.<br>
-            <small>Автоматична спроба через 30 секунд...</small>
+            ⚠️ Дані тимчасово недоступні.<br>
+            <small>Автоматична спроба через 60 секунд...</small>
         </td></tr>`;
         
-        // Автоматичний перезапуск через 30 секунд без вашої участі
-        setTimeout(fetchLiveSchedule, 30000);
+        // Автоматичний повтор без вашої участі
+        setTimeout(fetchAutomatedSchedule, 60000);
     }
 }
 
-function render(hours) {
-    const tbody = document.getElementById('outage-tbody');
-    const now = new Date().getHours();
-    let html = "";
-    let isDark = false;
-
-    // Групуємо години для компактного вигляду
+function processData(hours) {
     let intervals = [];
     let start = 0;
     for (let i = 1; i <= 24; i++) {
@@ -553,6 +546,14 @@ function render(hours) {
             start = i;
         }
     }
+    return intervals;
+}
+
+function render(intervals) {
+    const tbody = document.getElementById('outage-tbody');
+    const now = new Date().getHours();
+    let html = "";
+    let isDark = false;
 
     intervals.forEach(slot => {
         const isActive = now >= slot.s && now < slot.e;
@@ -560,6 +561,7 @@ function render(hours) {
         if (isActive && isOff) isDark = true;
 
         const timeLabel = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
+        
         html += `
             <tr class="${isActive ? 'row-active' : ''}">
                 <td style="padding:12px;">${MY_GROUP}</td>
@@ -571,20 +573,21 @@ function render(hours) {
     });
     tbody.innerHTML = html;
     
-    // Автоматичне керування яскравістю відео-фону
+    // Візуальний ефект темряви для будинку
     const bg = document.querySelector('.cd-bg-video-wrapper');
     if (bg) bg.style.filter = isDark ? "brightness(0.25) contrast(1.1)" : "brightness(1)";
 }
 
-// Запуск при завантаженні сторінки
-fetchLiveSchedule();
-// Оновлення кожні 30 хвилин (якщо Yasno змінить графік протягом дня)
-setInterval(fetchLiveSchedule, 1800000);
+// Запуск при відкритті
+fetchAutomatedSchedule();
+// Перевірка оновлень кожні 30 хвилин
+setInterval(fetchAutomatedSchedule, 1800000);
 </script>
 		
 </body>
 
 </html>
+
 
 
 
