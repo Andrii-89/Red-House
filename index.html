@@ -506,10 +506,11 @@ http://www.tooplate.com/view/2088-big-city
         // Ваші дані про відключення (Група 1.1)
         const scheduleData = [
             {start: 0, end: 120, type: "Definite", group: "1.1"},    // 00:00 - 02:00
-            {start: 120, end: 690, type: "NotPlanned", group: "1.1"}, // 02:00 - 11:30
-            {start: 690, end: 930, type: "Definite", group: "1.1"},   // 11:30 - 15:30
-            {start: 930, end: 1350, type: "NotPlanned", group: "1.1"},// 15:30 - 22:30
-            {start: 1350, end: 1440, type: "Definite", group: "1.1"}  // 22:30 - 00:00
+            {start: 120, end: 510, type: "NotPlanned", group: "1.1"}, // 02:00 - 08:30
+            {start: 510, end: 810, type: "Definite", group: "1.1"},   // 08:30 - 13:30
+            {start: 810, end: 1140, type: "NotPlanned", group: "1.1"},// 13:30 - 19:00
+            {start: 1140, end: 1350, type: "Definite", group: "1.1"}, // 19:00 - 22:30
+            {start: 1350, end: 1440, type: "NotPlanned", group: "1.1"} // 22:30 - 00:00
         ];
 
         function updatePowerStatus() {
@@ -566,6 +567,7 @@ http://www.tooplate.com/view/2088-big-city
 </body>
 
 </html>
+
 
 
 
