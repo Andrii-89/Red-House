@@ -499,95 +499,102 @@ http://www.tooplate.com/view/2088-big-city
         </script>            
 
 <script>
-const MY_GROUP = "1.1";
-// Використовуємо стабільне джерело, з якого беруть дані Telegram-боти
-const DATA_SOURCE = "https://raw.githubusercontent.com/the-m-v-a/yasno-data/main/kyiv.json";
+const MY_GROUP = "1.1"; // Ваша черга
 
-async function runAutonomousSync() {
+async function fetchLikeAHuman() {
     const tbody = document.getElementById('outage-tbody');
     
-    // Статус оновлення, якщо таблиця ще порожня
+    // Показуємо статус завантаження, якщо таблиця порожня
     if (tbody.children.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Синхронізація з мережею ботів...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Імітація запиту користувача...</td></tr>';
     }
 
     try {
-        // Завантажуємо дані з надійного джерела
-        const response = await fetch(DATA_SOURCE + "?nocache=" + Date.now());
-        if (!response.ok) throw new Error("Connection lost");
+        // Використовуємо шлюз, який додає заголовки реального браузера
+        const targetUrl = "https://yasno.com.ua/api/v1/pages/schedule/kyiv";
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&timestamp=${Date.now()}`;
         
-        const data = await response.json();
-        const mySchedule = data.schedule.find(s => s.group === MY_GROUP);
+        const response = await fetch(proxyUrl);
+        const json = await response.json();
+        const data = JSON.parse(json.contents);
         
-        if (mySchedule) {
-            renderTable(groupHoursIntoIntervals(mySchedule.hours));
-            console.log("Дані оновлено автоматично");
+        if (data && data.schedule) {
+            const groupData = data.schedule.find(s => s.group === MY_GROUP);
+            if (groupData) {
+                render(processIntervals(groupData.hours));
+                return;
+            }
         }
+        throw new Error("API Protected");
     } catch (e) {
-        console.error("Помилка синхронізації:", e);
-        // Замість блокування показуємо м'який статус оновлення
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px; color:#ff6b6b;">
-            ⚠️ Канал даних оновлюється...<br>
-            <small>Наступна спроба за 10 секунд</small>
-        </td></tr>`;
-        setTimeout(runAutonomousSync, 10000);
+        console.error("Yasno помітив бота, перемикаємось на резерв...");
+        // Якщо основний сайт блокує, миттєво беремо дані з дзеркала ботів
+        fetchFromMirror();
     }
 }
 
-function groupHoursIntoIntervals(hours) {
-    let result = [];
+async function fetchFromMirror() {
+    const MIRROR_URL = "https://raw.githubusercontent.com/the-m-v-a/yasno-data/main/kyiv.json";
+    try {
+        const res = await fetch(MIRROR_URL);
+        const data = await res.json();
+        const myGroup = data.schedule.find(s => s.group === MY_GROUP);
+        if (myGroup) render(processIntervals(myGroup.hours));
+    } catch (err) {
+        document.getElementById('outage-tbody').innerHTML = 
+            '<tr><td colspan="3" style="text-align:center;color:#ff6b6b;">⚠️ Сервер Yasno перевантажений. Спробуйте пізніше.</td></tr>';
+    }
+}
+
+function processIntervals(hours) {
+    let intervals = [];
     let start = 0;
     for (let i = 1; i <= 24; i++) {
         if (i === 24 || hours[i] !== hours[start]) {
-            result.push({start: start, end: i, type: hours[start]});
+            intervals.push({s: start, e: i, status: hours[start]});
             start = i;
         }
     }
-    return result;
+    return intervals;
 }
 
-function renderTable(intervals) {
+function render(intervals) {
     const tbody = document.getElementById('outage-tbody');
-    const currentHour = new Date().getHours();
-    let rowsHtml = "";
-    let isDarkNow = false;
+    const nowHr = new Date().getHours();
+    let html = "";
+    let isDark = false;
 
     intervals.forEach(slot => {
-        const isActive = currentHour >= slot.start && currentHour < slot.end;
-        const isOff = (slot.type === 'off' || slot.type === 2 || slot.type === '2');
-        
-        if (isActive && isOff) isDarkNow = true;
+        const isActive = nowHr >= slot.s && nowHr < slot.e;
+        const isOff = (slot.status === 'off' || slot.status === 2 || slot.status === '2');
+        if (isActive && isOff) isDark = true;
 
-        const timeLabel = `${String(slot.start).padStart(2, '0')}:00 - ${String(slot.end).padStart(2, '0')}:00`;
-        rowsHtml += `
+        const timeRange = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
+        html += `
             <tr class="${isActive ? 'row-active' : ''}">
                 <td style="padding:12px;">${MY_GROUP}</td>
-                <td style="padding:12px;">${timeLabel}</td>
+                <td style="padding:12px;">${timeRange}</td>
                 <td style="padding:12px;" class="${isOff ? 'status-off' : 'status-on'}">
                     ${isOff ? '🌑 Немає' : '💡 Є'}
                 </td>
             </tr>`;
     });
+    tbody.innerHTML = html;
     
-    tbody.innerHTML = rowsHtml;
-    
-    // Автоматичне керування яскравістю відео-фону
-    const videoBg = document.querySelector('.cd-bg-video-wrapper');
-    if (videoBg) {
-        videoBg.style.filter = isDarkNow ? "brightness(0.3) contrast(1.1)" : "brightness(1)";
-    }
+    // Ефект затемнення при відключенні
+    const bg = document.querySelector('.cd-bg-video-wrapper');
+    if (bg) bg.style.filter = isDark ? "brightness(0.25)" : "brightness(1)";
 }
 
-// Запускаємо відразу
-runAutonomousSync();
-// Перевіряємо наявність нових графіків кожні 10 хвилин
-setInterval(runAutonomousSync, 600000);
+fetchLikeAHuman();
+setInterval(fetchLikeAHuman, 600000); // Оновлення кожні 10 хв
 </script>
 
 		
 </body>
 
 </html>
+
 
 
 
