@@ -504,34 +504,32 @@ http://www.tooplate.com/view/2088-big-city
 
 			<script>
 const MY_GROUP = "1.1";
-// Запасний графік (буде показано, якщо Yasno не відповість швидко)
-const fallback = [
-    {s:0, e:2, t:2}, {s:2, e:8, t:1}, {s:8, e:13, t:2},
-    {s:13, e:19, t:1}, {s:19, e:22, t:2}, {s:22, e:24, t:1}
-];
 
-async function fetchSchedule() {
+async function fetchLiveSchedule() {
+    const tbody = document.getElementById('outage-tbody');
+    // Показуємо статус завантаження, поки чекаємо відповідь
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Оновлення даних з Yasno...</td></tr>';
+
     const api = "https://yasno.com.ua/api/v1/pages/schedule/kyiv";
-    // Використовуємо найнадійніший на сьогодні проксі
     const proxy = "https://api.allorigins.win/get?url=" + encodeURIComponent(api);
     
-    // Встановлюємо таймер на 3 секунди
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-
     try {
-        const resp = await fetch(proxy, { signal: controller.signal });
+        const resp = await fetch(proxy + "&v=" + Date.now());
         const json = await resp.json();
         const data = JSON.parse(json.contents);
         
         if (data && data.schedule) {
             const myHrs = data.schedule.find(s => s.group === MY_GROUP).hours;
             render(groupHours(myHrs));
-            console.log("Дані оновлено з Yasno");
+            console.log("Дані успішно отримано автоматично");
+        } else {
+            throw new Error("Невірна структура даних");
         }
     } catch (e) {
-        console.warn("Використовую локальний графік (Yasno недоступне)");
-        render(fallback);
+        console.error("Помилка автоматики:", e);
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#ff4444;">Не вдалося отримати графік. Спробуйте оновити сторінку пізніше.</td></tr>';
+        // Вимикаємо ефект темряви, якщо даних немає
+        updateHouseVisuals(false);
     }
 }
 
@@ -568,18 +566,26 @@ function render(intervals) {
         </tr>`;
     });
     tbody.innerHTML = html;
-    
-    const bg = document.querySelector('.cd-bg-video-wrapper');
-    if (bg) bg.style.filter = isDark ? "brightness(0.3) contrast(1.1)" : "brightness(1)";
+    updateHouseVisuals(isDark);
 }
 
-fetchSchedule();
-setInterval(fetchSchedule, 600000);
+function updateHouseVisuals(isDark) {
+    const bg = document.querySelector('.cd-bg-video-wrapper');
+    if (bg) {
+        bg.style.transition = "filter 2s ease-in-out";
+        bg.style.filter = isDark ? "brightness(0.25) contrast(1.1)" : "brightness(1)";
+    }
+}
+
+fetchLiveSchedule();
+// Оновлюємо щогодини
+setInterval(fetchLiveSchedule, 3600000);
 </script>
 		
 </body>
 
 </html>
+
 
 
 
