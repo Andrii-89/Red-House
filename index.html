@@ -504,30 +504,45 @@ http://www.tooplate.com/view/2088-big-city
 
 			<script>
     const MY_GROUP = "1.1";
-    // Запасні дані на випадок помилки мережі
+    // Три різних шляхи для отримання даних
+    const PROXY_LIST = [
+        (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+        (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+        (url) => `https://thingproxy.freeboard.io/fetch/${url}`
+    ];
+    const YASNO_API = "https://yasno.com.ua/api/v1/pages/schedule/kyiv";
+
+    // Останній відомий графік (якщо Yasno лежить)
     const backupData = [
         {s: 0, e: 2, t: 2}, {s: 2, e: 8, t: 1}, {s: 8, e: 13, t: 2},
         {s: 13, e: 19, t: 1}, {s: 19, e: 22, t: 2}, {s: 22, e: 24, t: 1}
     ];
 
     async function loadSchedule() {
-        try {
-            // Спроба отримати свіжі дані через проксі
-            const api = "https://yasno.com.ua/api/v1/pages/schedule/kyiv";
-            const resp = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent(api));
-            const json = await resp.json();
-            const data = JSON.parse(json.contents);
-            
-            if (data && data.schedule) {
-                const myHrs = data.schedule.find(s => s.group === MY_GROUP).hours;
-                renderTable(processHours(myHrs));
-            } else {
-                throw new Error("No data");
+        console.log("Спроба оновити графік...");
+        
+        for (let getProxy of PROXY_LIST) {
+            try {
+                const response = await fetch(getProxy(YASNO_API) + "?v=" + Date.now());
+                let rawData = await response.json();
+                
+                // Деякі проксі повертають об'єкт з полем contents
+                let data = rawData.contents ? JSON.parse(rawData.contents) : rawData;
+
+                if (data && data.schedule) {
+                    const myHrs = data.schedule.find(s => s.group === MY_GROUP).hours;
+                    renderTable(processHours(myHrs));
+                    console.log("Автоматика спрацювала через: " + getProxy.name);
+                    return; // Успіх! Виходимо з циклу.
+                }
+            } catch (err) {
+                console.warn("Проксі не спрацював, пробуємо наступний...");
             }
-        } catch (e) {
-            console.log("Використовую запасний графік");
-            renderTable(backupData);
         }
+        
+        // Якщо жоден проксі не допоміг
+        console.error("Всі методи отримання даних не спрацювали. Вмикаю ручний графік.");
+        renderTable(backupData);
     }
 
     function processHours(hours) {
@@ -564,19 +579,28 @@ http://www.tooplate.com/view/2088-big-city
                     </td>
                 </tr>`;
         });
-        tbody.innerHTML = html;
         
-        // Керування будинком (темніє, якщо зараз OFF)
+        if (tbody) tbody.innerHTML = html;
+        updateVisuals(isDark);
+    }
+
+    function updateVisuals(isDark) {
         const video = document.querySelector('.cd-bg-video-wrapper');
-        if (video) video.style.filter = isDark ? "brightness(0.2) contrast(1.1)" : "brightness(1)";
+        if (video) {
+            video.style.transition = "filter 2s ease-in-out";
+            video.style.filter = isDark ? "brightness(0.25) contrast(1.1) grayscale(0.2)" : "brightness(1)";
+        }
     }
 
     loadSchedule();
+    // Перевіряємо кожні 30 хвилин (на випадок змін у Yasno)
+    setInterval(loadSchedule, 1800000);
 </script>
 		
 </body>
 
 </html>
+
 
 
 
