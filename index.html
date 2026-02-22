@@ -501,43 +501,50 @@ http://www.tooplate.com/view/2088-big-city
 
 			<script>
 const MY_GROUP = "1.1";
-const TARGET_API = "https://yasno.com.ua/api/v1/pages/schedule/kyiv";
 
-async function syncYasno() {
+async function fetchLiveSchedule() {
     const tbody = document.getElementById('outage-tbody');
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Оновлення даних з Yasno...</td></tr>';
+    // Повідомляємо користувача про процес
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Синхронізація з Yasno...</td></tr>';
 
-    // Використовуємо надійний проксі-сервер для обходу захисту
-    const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(TARGET_API) + "&cache=" + Date.now();
+    const target = "https://yasno.com.ua/api/v1/pages/schedule/kyiv";
+    // Використовуємо corsproxy.io — він наразі краще обходить блокування
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(target)}?cache=${Date.now()}`;
 
     try {
         const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error("Network error");
+        if (!response.ok) throw new Error("Proxy error");
         
-        const json = await response.json();
-        const data = JSON.parse(json.contents);
+        const data = await response.json();
         
         if (data && data.schedule) {
-            const myData = data.schedule.find(s => s.group === MY_GROUP);
-            if (myData) {
-                renderLive(groupTimes(myData.hours));
-                return; // Успішне завантаження
+            const groupData = data.schedule.find(s => s.group === MY_GROUP);
+            if (groupData) {
+                render(groupData.hours);
+                console.log("Дані успішно оновлено автоматично");
+                return;
             }
         }
-        throw new Error("Data parse error");
-    } catch (err) {
-        console.error("Спроба не вдалася:", err);
+        throw new Error("Invalid data format");
+    } catch (e) {
+        console.error("Помилка:", e);
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px; color:#ff6b6b;">
-            ⚠️ Не вдалося отримати дані з Yasno.<br>
-            <small>Наступна спроба через 60 секунд...</small>
+            ⚠️ Сервер Yasno відхилив запит.<br>
+            <small>Автоматична спроба через 30 секунд...</small>
         </td></tr>`;
         
-        // Автоматичний повтор через хвилину
-        setTimeout(syncYasno, 60000);
+        // Автоматичний перезапуск через 30 секунд без вашої участі
+        setTimeout(fetchLiveSchedule, 30000);
     }
 }
 
-function groupTimes(hours) {
+function render(hours) {
+    const tbody = document.getElementById('outage-tbody');
+    const now = new Date().getHours();
+    let html = "";
+    let isDark = false;
+
+    // Групуємо години для компактного вигляду
     let intervals = [];
     let start = 0;
     for (let i = 1; i <= 24; i++) {
@@ -546,50 +553,39 @@ function groupTimes(hours) {
             start = i;
         }
     }
-    return intervals;
-}
-
-function renderLive(intervals) {
-    const tbody = document.getElementById('outage-tbody');
-    const now = new Date().getHours();
-    let rows = "";
-    let isDark = false;
 
     intervals.forEach(slot => {
         const isActive = now >= slot.s && now < slot.e;
         const isOff = (slot.status === 'off' || slot.status === 2 || slot.status === '2');
         if (isActive && isOff) isDark = true;
 
-        const timeRange = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
-        
-        rows += `
+        const timeLabel = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
+        html += `
             <tr class="${isActive ? 'row-active' : ''}">
                 <td style="padding:12px;">${MY_GROUP}</td>
-                <td style="padding:12px;">${timeRange}</td>
+                <td style="padding:12px;">${timeLabel}</td>
                 <td style="padding:12px;" class="${isOff ? 'status-off' : 'status-on'}">
                     ${isOff ? '🌑 Немає' : '💡 Є'}
                 </td>
             </tr>`;
     });
+    tbody.innerHTML = html;
     
-    tbody.innerHTML = rows;
-    
-    // Керування яскравістю фонового відео
+    // Автоматичне керування яскравістю відео-фону
     const bg = document.querySelector('.cd-bg-video-wrapper');
-    if (bg) {
-        bg.style.transition = "filter 3s ease";
-        bg.style.filter = isDark ? "brightness(0.25) contrast(1.1)" : "brightness(1)";
-    }
+    if (bg) bg.style.filter = isDark ? "brightness(0.25) contrast(1.1)" : "brightness(1)";
 }
 
-// Запуск та інтервал оновлення (щогодини)
-syncYasno();
-setInterval(syncYasno, 3600000);
+// Запуск при завантаженні сторінки
+fetchLiveSchedule();
+// Оновлення кожні 30 хвилин (якщо Yasno змінить графік протягом дня)
+setInterval(fetchLiveSchedule, 1800000);
 </script>
 		
 </body>
 
 </html>
+
 
 
 
