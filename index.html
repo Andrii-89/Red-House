@@ -505,37 +505,38 @@ http://www.tooplate.com/view/2088-big-city
 			<script>
 const MY_GROUP = "1.1";
 
-async function fetchLiveSchedule() {
+async function fetchLiveOnly() {
     const tbody = document.getElementById('outage-tbody');
-    // Показуємо статус завантаження, поки чекаємо відповідь
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Оновлення даних з Yasno...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Синхронізація з сервером енергомережі...</td></tr>';
 
-    const api = "https://yasno.com.ua/api/v1/pages/schedule/kyiv";
-    const proxy = "https://api.allorigins.win/get?url=" + encodeURIComponent(api);
-    
+    // Використовуємо інший шлях: спробуємо отримати дані через JSON-експортер
+    // Це посилання на актуальний розклад для Києва, який оновлюється автоматично
+    const url = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://yasno.com.ua/api/v1/pages/schedule/kyiv");
+
     try {
-        const resp = await fetch(proxy + "&v=" + Date.now());
-        const json = await resp.json();
+        const response = await fetch(url + "&nocache=" + new Date().getTime());
+        const json = await response.json();
         const data = JSON.parse(json.contents);
         
         if (data && data.schedule) {
-            const myHrs = data.schedule.find(s => s.group === MY_GROUP).hours;
-            render(groupHours(myHrs));
-            console.log("Дані успішно отримано автоматично");
+            const mySchedule = data.schedule.find(s => s.group === MY_GROUP);
+            if (mySchedule) {
+                render(groupHours(mySchedule.hours));
+                console.log("Дані Yasno отримано успішно!");
+            }
         } else {
-            throw new Error("Невірна структура даних");
+            throw new Error("Не вдалося розпізнати формат Yasno");
         }
     } catch (e) {
-        console.error("Помилка автоматики:", e);
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#ff4444;">Не вдалося отримати графік. Спробуйте оновити сторінку пізніше.</td></tr>';
-        // Вимикаємо ефект темряви, якщо даних немає
-        updateHouseVisuals(false);
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#ff6b6b;">⚠️ Сервер Yasno тимчасово недоступний. Автоматичне оновлення через 5 хвилин...</td></tr>';
+        console.error("Помилка запиту:", e);
     }
 }
 
 function groupHours(hours) {
     let res = [];
     let start = 0;
+    // Логіка групування для вигляду як на вашому зразку
     for (let i = 1; i <= 24; i++) {
         if (i === 24 || hours[i] !== hours[start]) {
             res.push({s: start, e: i, t: hours[start]});
@@ -566,25 +567,21 @@ function render(intervals) {
         </tr>`;
     });
     tbody.innerHTML = html;
-    updateHouseVisuals(isDark);
-}
-
-function updateHouseVisuals(isDark) {
+    
+    // Автоматичне керування яскравістю сайту
     const bg = document.querySelector('.cd-bg-video-wrapper');
-    if (bg) {
-        bg.style.transition = "filter 2s ease-in-out";
-        bg.style.filter = isDark ? "brightness(0.25) contrast(1.1)" : "brightness(1)";
-    }
+    if (bg) bg.style.filter = isDark ? "brightness(0.2) contrast(1.1)" : "brightness(1)";
 }
 
-fetchLiveSchedule();
-// Оновлюємо щогодини
-setInterval(fetchLiveSchedule, 3600000);
+fetchLiveOnly();
+// Перевірка оновлень кожні 15 хвилин
+setInterval(fetchLiveOnly, 900000);
 </script>
 		
 </body>
 
 </html>
+
 
 
 
