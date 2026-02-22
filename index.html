@@ -500,89 +500,95 @@ http://www.tooplate.com/view/2088-big-city
 
 <script>
 const MY_GROUP = "1.1";
-// Це джерело використовується популярними моніторинговими ботами
-const BOT_SOURCE = "https://raw.githubusercontent.com/the-m-v-a/yasno-data/main/kyiv.json";
+// Використовуємо стабільне джерело, з якого беруть дані Telegram-боти
+const DATA_SOURCE = "https://raw.githubusercontent.com/the-m-v-a/yasno-data/main/kyiv.json";
 
-async function syncWithBotSource() {
+async function runAutonomousSync() {
     const tbody = document.getElementById('outage-tbody');
     
-    // Показуємо статус тільки якщо таблиця пуста
-    if (tbody.children.length <= 1) {
+    // Статус оновлення, якщо таблиця ще порожня
+    if (tbody.children.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Синхронізація з мережею ботів...</td></tr>';
     }
 
     try {
-        // Додаємо випадковий параметр, щоб браузер не показував старі дані
-        const response = await fetch(BOT_SOURCE + "?t=" + Date.now());
-        if (!response.ok) throw new Error("Source error");
+        // Завантажуємо дані з надійного джерела
+        const response = await fetch(DATA_SOURCE + "?nocache=" + Date.now());
+        if (!response.ok) throw new Error("Connection lost");
         
         const data = await response.json();
-        const myGroupData = data.schedule.find(s => s.group === MY_GROUP);
+        const mySchedule = data.schedule.find(s => s.group === MY_GROUP);
         
-        if (myGroupData) {
-            renderFromBot(processBotData(myGroupData.hours));
-            return;
+        if (mySchedule) {
+            renderTable(groupHoursIntoIntervals(mySchedule.hours));
+            console.log("Дані оновлено автоматично");
         }
     } catch (e) {
-        console.error("Синхронізація не вдалася:", e);
-        // Замість помилки "API Lock" показуємо нейтральний статус
+        console.error("Помилка синхронізації:", e);
+        // Замість блокування показуємо м'який статус оновлення
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px; color:#ff6b6b;">
-            ⚠️ Оновлення каналу даних...<br>
-            <small>Автоматична спроба через 10 секунд</small>
+            ⚠️ Канал даних оновлюється...<br>
+            <small>Наступна спроба за 10 секунд</small>
         </td></tr>`;
-        setTimeout(syncWithBotSource, 10000);
+        setTimeout(runAutonomousSync, 10000);
     }
 }
 
-function processBotData(hours) {
-    let intervals = [];
+function groupHoursIntoIntervals(hours) {
+    let result = [];
     let start = 0;
     for (let i = 1; i <= 24; i++) {
         if (i === 24 || hours[i] !== hours[start]) {
-            intervals.push({s: start, e: i, status: hours[start]});
+            result.push({start: start, end: i, type: hours[start]});
             start = i;
         }
     }
-    return intervals;
+    return result;
 }
 
-function renderFromBot(intervals) {
+function renderTable(intervals) {
     const tbody = document.getElementById('outage-tbody');
-    const nowHr = new Date().getHours();
-    let html = "";
-    let isOffNow = false;
+    const currentHour = new Date().getHours();
+    let rowsHtml = "";
+    let isDarkNow = false;
 
     intervals.forEach(slot => {
-        const isActive = nowHr >= slot.s && nowHr < slot.e;
-        const isOff = (slot.status === 'off' || slot.status === 2 || slot.status === '2');
-        if (isActive && isOff) isOffNow = true;
+        const isActive = currentHour >= slot.start && currentHour < slot.end;
+        const isOff = (slot.type === 'off' || slot.type === 2 || slot.type === '2');
+        
+        if (isActive && isOff) isDarkNow = true;
 
-        const timeRange = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
-        html += `
+        const timeLabel = `${String(slot.start).padStart(2, '0')}:00 - ${String(slot.end).padStart(2, '0')}:00`;
+        rowsHtml += `
             <tr class="${isActive ? 'row-active' : ''}">
                 <td style="padding:12px;">${MY_GROUP}</td>
-                <td style="padding:12px;">${timeRange}</td>
+                <td style="padding:12px;">${timeLabel}</td>
                 <td style="padding:12px;" class="${isOff ? 'status-off' : 'status-on'}">
                     ${isOff ? '🌑 Немає' : '💡 Є'}
                 </td>
             </tr>`;
     });
-    tbody.innerHTML = html;
     
-    // Керуємо яскравістю сайту автоматично
-    const bg = document.querySelector('.cd-bg-video-wrapper');
-    if (bg) bg.style.filter = isOffNow ? "brightness(0.2) contrast(1.1)" : "brightness(1)";
+    tbody.innerHTML = rowsHtml;
+    
+    // Автоматичне керування яскравістю відео-фону
+    const videoBg = document.querySelector('.cd-bg-video-wrapper');
+    if (videoBg) {
+        videoBg.style.filter = isDarkNow ? "brightness(0.3) contrast(1.1)" : "brightness(1)";
+    }
 }
 
-syncWithBotSource();
-// Перевірка оновлень кожні 10 хвилин
-setInterval(syncWithBotSource, 600000);
+// Запускаємо відразу
+runAutonomousSync();
+// Перевіряємо наявність нових графіків кожні 10 хвилин
+setInterval(runAutonomousSync, 600000);
 </script>
 
 		
 </body>
 
 </html>
+
 
 
 
