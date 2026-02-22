@@ -501,89 +501,101 @@ http://www.tooplate.com/view/2088-big-city
 
 			<script>
 const MY_GROUP = "1.1";
-const DATA_URL = "https://yasno.com.ua/api/v1/pages/schedule/kyiv";
+// Ваш особистий Google-шлюз для обходу блокувань
+const GOOGLE_GATEWAY = "https://script.google.com/macros/s/AKfycbx8z3qHaUKhermXtyOzozN9ej2fSfq0PHBU7XzY5gYwt3VfFWb6F4TwzFGGP1kQW4Vf3g/exec";
 
-async function fetchPowerData() {
+async function fetchAutonomousSchedule() {
     const tbody = document.getElementById('outage-tbody');
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Підключення до Yasno через Google Tunnel...</td></tr>';
-
-    // Використовуємо спеціальний скрипт-проксі через Google Apps Script (найнадійніший метод)
-    const proxy = "https://script.google.com/macros/s/AKfycbzS-uNfX4X-oFhX6_8_H_R-u_v-P/exec?url="; 
-    // Якщо цей канал тимчасово зайнятий, використовуємо резервний CORS-сервер
-    const secondaryProxy = "https://api.allorigins.win/get?url=";
+    // Відображаємо статус завантаження, щоб користувач розумів, що сайт працює
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Отримання даних через Google-шлюз...</td></tr>';
 
     try {
-        const response = await fetch(secondaryProxy + encodeURIComponent(DATA_URL) + "&cache=" + Date.now());
-        const json = await response.json();
-        const data = JSON.parse(json.contents);
+        // Запит до вашого Google Script, який поверне чистий JSON від Yasno
+        const response = await fetch(GOOGLE_GATEWAY);
+        if (!response.ok) throw new Error("Gateway connection error");
+        
+        const data = await response.json();
         
         if (data && data.schedule) {
-            const groupInfo = data.schedule.find(s => s.group === MY_GROUP);
-            if (groupInfo) {
-                renderTable(groupInfo.hours);
-                console.log("Дані отримано автоматично");
+            const myGroupData = data.schedule.find(s => s.group === MY_GROUP);
+            if (myGroupData) {
+                render(processIntervals(myGroupData.hours));
+                console.log("Дані успішно синхронізовано");
                 return;
             }
         }
-        throw new Error("Invalid Data");
+        throw new Error("Invalid format from Yasno");
     } catch (e) {
-        console.error("Спроба не вдалася:", e);
+        console.error("Помилка автоматики:", e);
+        // Замість порожнього місця показуємо інформативне повідомлення
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px; color:#ff6b6b;">
-            ⚠️ Yasno API Lock. <br>
-            <small>Автоматичне перепідключення через 60 секунд...</small>
+            ⚠️ Тимчасова затримка відповіді Yasno.<br>
+            <small>Автоматичне перепідключення через 30 секунд...</small>
         </td></tr>`;
         
-        // Автономний перезапуск без участі користувача
-        setTimeout(fetchPowerData, 60000);
+        // Автономний перезапуск без вашої участі
+        setTimeout(fetchAutonomousSchedule, 30000);
     }
 }
 
-function renderTable(hours) {
-    const tbody = document.getElementById('outage-tbody');
-    const nowHr = new Date().getHours();
-    let html = "";
-    let isDark = false;
-
-    // Автоматичне групування годин
+function processIntervals(hours) {
     let intervals = [];
     let start = 0;
+    // Групуємо години за станом (Є світло / Немає світла)
     for (let i = 1; i <= 24; i++) {
         if (i === 24 || hours[i] !== hours[start]) {
-            intervals.push({s: start, e: i, t: hours[start]});
+            intervals.push({s: start, e: i, status: hours[start]});
             start = i;
         }
     }
+    return intervals;
+}
+
+function render(intervals) {
+    const tbody = document.getElementById('outage-tbody');
+    const nowHr = new Date().getHours();
+    let html = "";
+    let isCurrentlyOff = false;
 
     intervals.forEach(slot => {
         const isActive = nowHr >= slot.s && nowHr < slot.e;
-        const isOff = (slot.t === 'off' || slot.t === 2 || slot.t === '2');
-        if (isActive && isOff) isDark = true;
+        // Перевірка статусу відключення (число 2 або слово 'off')
+        const isOff = (slot.status === 'off' || slot.status === 2 || slot.status === '2');
+        
+        if (isActive && isOff) isCurrentlyOff = true;
 
-        const timeStr = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
+        const timeRange = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
+        
+        // Використовуємо класи для підсвітки
         html += `
             <tr class="${isActive ? 'row-active' : ''}">
                 <td style="padding:12px;">${MY_GROUP}</td>
-                <td style="padding:12px;">${timeStr}</td>
+                <td style="padding:12px;">${timeRange}</td>
                 <td style="padding:12px;" class="${isOff ? 'status-off' : 'status-on'}">
                     ${isOff ? '🌑 Немає' : '💡 Є'}
                 </td>
             </tr>`;
     });
+    
     tbody.innerHTML = html;
     
-    // Керування атмосферою сайту
+    // Керування яскравістю фонового відео
     const bg = document.querySelector('.cd-bg-video-wrapper');
-    if (bg) bg.style.filter = isDark ? "brightness(0.2) contrast(1.1)" : "brightness(1)";
+    if (bg) {
+        bg.style.transition = "filter 3s ease";
+        bg.style.filter = isCurrentlyOff ? "brightness(0.2) contrast(1.1)" : "brightness(1)";
+    }
 }
 
-fetchPowerData();
-// Оновлення кожні 30 хвилин для повної актуальності
-setInterval(fetchPowerData, 1800000);
+// Запуск при завантаженні та оновлення кожні 15 хвилин
+fetchAutonomousSchedule();
+setInterval(fetchAutonomousSchedule, 900000);
 </script>
 		
 </body>
 
 </html>
+
 
 
 
