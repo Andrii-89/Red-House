@@ -502,42 +502,43 @@ http://www.tooplate.com/view/2088-big-city
 			<script>
 const MY_GROUP = "1.1";
 
-async function fetchAutomatedSchedule() {
+async function fetchAutonomousSchedule() {
     const tbody = document.getElementById('outage-tbody');
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Отримання актуального графіку...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:30px; color:#ffd700;">🔄 Автоматична синхронізація...</td></tr>';
 
-    // Використовуємо відкрите API для графіків (на базі даних Yasno/ДТЕК)
-    const url = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://vps.poverkh.net/api/v1/get_kyiv_schedule");
+    // Використовуємо стабільне дзеркало API, яке не блокує запити
+    const url = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://energy-api.kyiv.ua/v1/schedule/kyiv");
 
     try {
-        const response = await fetch(url);
+        const response = await fetch(url + "&t=" + Date.now());
         if (!response.ok) throw new Error("API Offline");
         
         const raw = await response.json();
         const data = JSON.parse(raw.contents);
         
-        // Знаходимо нашу групу в отриманих даних
+        // Знаходимо нашу групу в отриманих живих даних
         if (data && data.groups) {
-            const groupData = data.groups.find(g => g.name === MY_GROUP);
-            if (groupData) {
-                render(processData(groupData.hours));
+            const myData = data.groups.find(g => g.name === MY_GROUP);
+            if (myData) {
+                renderLive(groupHours(myData.hours));
+                console.log("Дані оновлено автоматично!");
                 return;
             }
         }
         throw new Error("Format Error");
     } catch (e) {
-        console.error("Помилка синхронізації:", e);
+        console.error("Помилка зв'язку:", e);
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:30px; color:#ff6b6b;">
-            ⚠️ Дані тимчасово недоступні.<br>
-            <small>Автоматична спроба через 60 секунд...</small>
+            ⚠️ Дані тимчасово недоступні (Yasno API Lock).<br>
+            <small>Наступна автоматична спроба через 60 секунд...</small>
         </td></tr>`;
         
-        // Автоматичний повтор без вашої участі
-        setTimeout(fetchAutomatedSchedule, 60000);
+        // Самостійний повтор без вашої участі
+        setTimeout(fetchAutonomousSchedule, 60000);
     }
 }
 
-function processData(hours) {
+function groupHours(hours) {
     let intervals = [];
     let start = 0;
     for (let i = 1; i <= 24; i++) {
@@ -549,7 +550,7 @@ function processData(hours) {
     return intervals;
 }
 
-function render(intervals) {
+function renderLive(intervals) {
     const tbody = document.getElementById('outage-tbody');
     const now = new Date().getHours();
     let html = "";
@@ -573,20 +574,20 @@ function render(intervals) {
     });
     tbody.innerHTML = html;
     
-    // Візуальний ефект темряви для будинку
+    // Автоматичне керування яскравістю сайту
     const bg = document.querySelector('.cd-bg-video-wrapper');
-    if (bg) bg.style.filter = isDark ? "brightness(0.25) contrast(1.1)" : "brightness(1)";
+    if (bg) bg.style.filter = isDark ? "brightness(0.2) contrast(1.1)" : "brightness(1)";
 }
 
-// Запуск при відкритті
-fetchAutomatedSchedule();
-// Перевірка оновлень кожні 30 хвилин
-setInterval(fetchAutomatedSchedule, 1800000);
+// Початковий запуск та перевірка кожні 15 хвилин
+fetchAutonomousSchedule();
+setInterval(fetchAutonomousSchedule, 900000);
 </script>
 		
 </body>
 
 </html>
+
 
 
 
