@@ -499,73 +499,88 @@ http://www.tooplate.com/view/2088-big-city
                            
             });
 
-        </script>            
+        <script>
+    const MY_GROUP = "1.1";
+    // Використовуємо проксі для обходу обмежень CORS
+    const PROXY_URL = "https://api.allorigins.win/get?url=";
+    const YASNO_API = encodeURIComponent("https://yasno.com.ua/api/v1/pages/schedule/kyiv");
 
-		<script>
-        // Ваші дані про відключення (Група 1.1)
-        const scheduleData = [
-            {start: 0, end: 120, type: "Definite", group: "1.1"},    // 00:00 - 02:00
-            {start: 120, end: 510, type: "NotPlanned", group: "1.1"}, // 02:00 - 08:30
-            {start: 510, end: 810, type: "Definite", group: "1.1"},   // 08:30 - 13:30
-            {start: 810, end: 1140, type: "NotPlanned", group: "1.1"},// 13:30 - 19:00
-            {start: 1140, end: 1350, type: "Definite", group: "1.1"}, // 19:00 - 22:30
-            {start: 1350, end: 1440, type: "NotPlanned", group: "1.1"} // 22:30 - 00:00
-        ];
+    async function updateFromYasno() {
+        try {
+            const response = await fetch(PROXY_URL + YASNO_API);
+            const data = await response.json();
+            const yasnoData = JSON.parse(data.contents);
 
-        function updatePowerStatus() {
-            const now = new Date();
-            const currentMins = now.getHours() * 60 + now.getMinutes();
-            const tbody = document.getElementById('outage-tbody');
-            const videoWrapper = document.querySelector('.cd-bg-video-wrapper');
-            
-            let tableRows = "";
-            let isPowerOffNow = false;
-
-            scheduleData.forEach(slot => {
-                const isCurrentSlot = currentMins >= slot.start && currentMins < slot.end;
-                const isDefiniteOff = slot.type === "Definite";
-                
-                // Перевіряємо, чи зараз за графіком немає світла
-                if (isCurrentSlot && isDefiniteOff) isPowerOffNow = true;
-
-                // Функція для красивого форматування часу (0:0 -> 00:00)
-                const format = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ":" + String(m % 60).padStart(2, '0');
-                
-                tableRows += `
-                    <tr class="${isCurrentSlot ? 'row-active' : ''}">
-                        <td style="padding: 10px;">${slot.group}</td>
-                        <td style="padding: 10px;">${format(slot.start)} - ${format(slot.end)}</td>
-                        <td style="padding: 10px;" class="${isDefiniteOff ? 'status-off' : 'status-on'}">
-                            ${isDefiniteOff ? '🌑 Немає' : '💡 Є'}
-                        </td>
-                    </tr>`;
-            });
-
-            // Вставляємо рядки в таблицю, яку ми зробили в Кроці 2
-            if (tbody) tbody.innerHTML = tableRows;
-
-            // Ефект "Потухлого будинку"
-            if (videoWrapper) {
-                videoWrapper.style.transition = "filter 2s ease-in-out"; // Плавне вимкнення
-                if (isPowerOffNow) {
-                    // Темний будинок
-                    videoWrapper.style.filter = "brightness(0.2) contrast(1.1) grayscale(0.4)";
-                } else {
-                    // Світло горить
-                    videoWrapper.style.filter = "brightness(1)";
+            if (yasnoData && yasnoData.schedule) {
+                const mySchedule = yasnoData.schedule.find(s => s.group === MY_GROUP);
+                if (mySchedule) {
+                    renderSchedule(mySchedule.hours);
                 }
+            }
+        } catch (e) {
+            console.error("Помилка Yasno:", e);
+        }
+    }
+
+    function renderSchedule(hours) {
+        const tbody = document.getElementById('outage-tbody');
+        const videoWrapper = document.querySelector('.cd-bg-video-wrapper');
+        const currentHour = new Date().getHours();
+        
+        let tableRows = "";
+        let isPowerOffNow = false;
+
+        // Yasno надає масив з 24 значень (0-23 години)
+        // Об'єднуємо однакові статуси, що йдуть підряд, для красивого вигляду
+        let intervals = [];
+        let currentInterval = { start: 0, status: hours[0] };
+
+        for (let i = 1; i <= hours.length; i++) {
+            if (i === hours.length || hours[i] !== currentInterval.status) {
+                intervals.push({
+                    start: currentInterval.start,
+                    end: i,
+                    status: currentInterval.status
+                });
+                if (i < hours.length) currentInterval = { start: i, status: hours[i] };
             }
         }
 
-        // Запускаємо функцію відразу при завантаженні
-        updatePowerStatus();
-        // І оновлюємо кожні 30 секунд, щоб не пропустити момент вимкнення
-        setInterval(updatePowerStatus, 30000);
-    </script>
+        intervals.forEach(slot => {
+            const isNow = currentHour >= slot.start && currentHour < slot.end;
+            const isOff = slot.status === 'off' || slot.status === 2; // статус відключення у Yasno
+            
+            if (isNow && isOff) isPowerOffNow = true;
+
+            const timeRange = `${String(slot.start).padStart(2, '0')}:00 - ${String(slot.end).padStart(2, '0')}:00`;
+            
+            tableRows += `
+                <tr class="${isNow ? 'row-active' : ''}">
+                    <td style="padding: 10px;">${MY_GROUP}</td>
+                    <td style="padding: 10px;">${timeRange}</td>
+                    <td style="padding: 10px;" class="${isOff ? 'status-off' : 'status-on'}">
+                        ${isOff ? '🌑 Немає' : '💡 Є'}
+                    </td>
+                </tr>`;
+        });
+
+        if (tbody) tbody.innerHTML = tableRows;
+
+        // Керування яскравістю будинку
+        if (videoWrapper) {
+            videoWrapper.style.transition = "filter 2s ease-in-out";
+            videoWrapper.style.filter = isPowerOffNow ? "brightness(0.2) contrast(1.1) grayscale(0.3)" : "brightness(1)";
+        }
+    }
+
+    updateFromYasno();
+    setInterval(updateFromYasno, 600000); // Оновлювати раз на 10 хвилин
+</script>
 		
 </body>
 
 </html>
+
 
 
 
