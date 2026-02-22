@@ -583,65 +583,11 @@ http://www.tooplate.com/view/2088-big-city
                 $('.tm-current-year').text(new Date().getFullYear());
                            
             });
-
-        </script>  
-		
-<script>
-    // Твої актуальні дані (Група 1.1)
-    const scheduleData = [
-        {start: 0, end: 120, type: "Definite", group: "1.1"},    // 00:00 - 02:00
-        {start: 120, end: 690, type: "NotPlanned", group: "1.1"}, // 02:00 - 11:30
-        {start: 690, end: 930, type: "Definite", group: "1.1"},   // 11:30 - 15:30
-        {start: 930, end: 1350, type: "NotPlanned", group: "1.1"},// 15:30 - 22:30
-        {start: 1350, end: 1440, type: "Definite", group: "1.1"}  // 22:30 - 00:00
-    ];
-
-    function updateStatus() {
-        const now = new Date();
-        const currentMins = now.getHours() * 60 + now.getMinutes();
-        const tbody = document.getElementById('outage-tbody');
-        const videoWrapper = document.querySelector('.cd-bg-video-wrapper');
-        
-        let tableRows = "";
-        let isPowerOffNow = false;
-
-        scheduleData.forEach(slot => {
-            const isCurrentSlot = currentMins >= slot.start && currentMins < slot.end;
-            const isDefiniteOff = slot.type === "Definite";
-            
-            if (isCurrentSlot && isDefiniteOff) isPowerOffNow = true;
-
-            // Форматуємо час для таблиці
-            const format = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ":" + String(m % 60).padStart(2, '0');
-            
-            tableRows += `
-                <tr class="${isCurrentSlot ? 'row-active' : ''}">
-                    <td style="padding: 10px;">${slot.group}</td>
-                    <td style="padding: 10px;">${format(slot.start)} - ${format(slot.end)}</td>
-                    <td style="padding: 10px;" class="${isDefiniteOff ? 'status-off' : 'status-on'}">
-                        ${isDefiniteOff ? '🌑 Немає' : '💡 Є'}
-                    </td>
-                </tr>`;
-        });
-
-        // Оновлюємо тільки тіло таблиці (дані не зникнуть)
-        if (tbody) tbody.innerHTML = tableRows;
-
-        // Керуємо яскравістю будинку
-        if (videoWrapper) {
-            videoWrapper.style.transition = "filter 2s ease-in-out";
-            videoWrapper.style.filter = isPowerOffNow ? "brightness(0.2) contrast(1.1) grayscale(0.3)" : "brightness(1)";
-        }
-    }
-
-    // Запуск
-    updateStatus();
-    setInterval(updateStatus, 30000); // Перевіряти кожні 30 секунд
-</script>
 		
 </body>
 
 </html>
+
 
 
 
