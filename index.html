@@ -498,82 +498,36 @@ http://www.tooplate.com/view/2088-big-city
 
         </script>            
 
-<script>
-const MY_GROUP = "1.1";
-
-async function fetchSchedule() {
-    const tbody = document.getElementById('outage-tbody');
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Пошук актуального графіку...</td></tr>';
-
-    // Спробуємо інший надійний проксі-сервіс
-    const targetUrl = "https://yasno.com.ua/api/v1/pages/schedule/kyiv";
-    const proxy = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);
+} catch (e) {
+    console.error("Використовуємо ручний графік у хвилинах:", e);
     
-    try {
-        const resp = await fetch(proxy);
-        const data = await resp.json();
-        
-        // Перевірка структури даних
-        if (data && data.schedule) {
-            const myHrs = data.schedule.find(s => s.group === MY_GROUP).hours;
-            render(groupHours(myHrs));
-            console.log("Дані отримано через резервний канал!");
-        } else {
-            throw new Error("Data format mismatch");
-        }
-    } catch (e) {
-        console.error("Всі канали заблоковано:", e);
-        // Повертаємо запасний варіант, щоб не було порожньо, як на скріншоті image_205d37.png
-        const fallback = [
-            {s:0, e:2, t:2}, {s:2, e:8, t:1}, {s:8, e:13, t:2},
-            {s:13, e:19, t:1}, {s:19, e:22, t:2}, {s:22, e:24, t:1}
-        ];
-        render(fallback);
-    }
-}
+    // Ваш новий формат графіка (час у хвилинах)
+    const rawData = [
+        {start: 0, end: 120, type: "Definite"},    // 00:00 - 02:00
+        {start: 120, end: 510, type: "NotPlanned"}, // 02:00 - 08:30
+        {start: 510, end: 810, type: "Definite"},   // 08:30 - 13:30
+        {start: 810, end: 1140, type: "NotPlanned"},// 13:30 - 19:00
+        {start: 1140, end: 1350, type: "Definite"}, // 19:00 - 22:30
+        {start: 1350, end: 1440, type: "NotPlanned"}// 22:30 - 00:00
+    ];
 
-// Функції groupHours та render залишаються такими ж, як були раніше
-function groupHours(hours) {
-    let res = []; let start = 0;
-    for (let i = 1; i <= 24; i++) {
-        if (i === 24 || hours[i] !== hours[start]) {
-            res.push({s: start, e: i, t: hours[start]});
-            start = i;
-        }
-    }
-    return res;
-}
-
-function render(intervals) {
-    const tbody = document.getElementById('outage-tbody');
-    const now = new Date().getHours();
-    let html = ""; let isDark = false;
-
-    intervals.forEach(slot => {
-        const isActive = now >= slot.s && now < slot.e;
-        const isOff = (slot.t === 'off' || slot.t === 2 || slot.t === '2');
-        if (isActive && isOff) isDark = true;
-        const time = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
-        html += `<tr class="${isActive ? 'row-active' : ''}">
-            <td style="padding:12px">${MY_GROUP}</td>
-            <td style="padding:12px">${time}</td>
-            <td style="padding:12px" class="${isOff ? 'status-off' : 'status-on'}">
-                ${isOff ? '🌑 Немає' : '💡 Є'}
-            </td>
-        </tr>`;
+    // Конвертуємо хвилини у формат для функції render
+    const fallback = rawData.map(item => {
+        return {
+            s: Math.floor(item.start / 60), // перетворюємо хвилини в години
+            e: Math.ceil(item.end / 60),
+            t: item.type === "Definite" ? 2 : 1 // 2 - немає світла, 1 - є
+        };
     });
-    tbody.innerHTML = html;
-    const bg = document.querySelector('.cd-bg-video-wrapper');
-    if (bg) bg.style.filter = isDark ? "brightness(0.25) contrast(1.1)" : "brightness(1)";
-}
 
-fetchSchedule();
-</script>
+    render(fallback);
+}
 
 		
 </body>
 
 </html>
+
 
 
 
