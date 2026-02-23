@@ -508,12 +508,11 @@ async function fetchSchedule() {
 
     // Ваш новий формат даних у хвилинах
     const rawData = [
-        {start: 0, end: 120, type: "Definite"},    // 00:00 - 02:00
-        {start: 120, end: 510, type: "NotPlanned"}, // 02:00 - 08:30
-        {start: 510, end: 810, type: "Definite"},   // 08:30 - 13:30
-        {start: 810, end: 1140, type: "NotPlanned"},// 13:30 - 19:00
-        {start: 1140, end: 1350, type: "Definite"}, // 19:00 - 22:30
-        {start: 1350, end: 1440, type: "NotPlanned"}// 22:30 - 00:00
+        {start: 0, end: 360, type: "NotPlanned"},   // 00:00 - 06:00
+        {start: 360, end: 660, type: "Definite"},    // 06:00 - 11:00
+        {start: 660, end: 870, type: "NotPlanned"},  // 11:00 - 14:30
+        {start: 870, end: 1260, type: "Definite"},   // 14:30 - 21:00
+        {start: 1260, end: 1440, type: "NotPlanned"} // 21:00 - 00:00
     ];
 
     try {
@@ -593,6 +592,7 @@ fetchSchedule();
 </body>
 
 </html>
+
 
 
 
