@@ -501,98 +501,100 @@ http://www.tooplate.com/view/2088-big-city
 
 <script>
 const MY_GROUP = "1.1";
+// ВСТАВ СЮДИ СВІЙ URL ВІД GOOGLE SCRIPT (той, що закінчується на /exec)
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwvAdU6Wt3YP6JOe6KwjvOPyWBV2DMBNgnMNFYh4gDG0b2kRNGdUagxNCcVLn3WFX94/exec"; 
 
 async function fetchSchedule() {
     const tbody = document.getElementById('outage-tbody');
-    // Початковий текст, поки скрипт думає
     tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Завантаження...</td></tr>';
 
-    // Ваш новий формат даних у хвилинах
-    const rawData = [
-        {start: 0, end: 360, type: "NotPlanned"},   // 00:00 - 06:00
-        {start: 360, end: 660, type: "Definite"},    // 06:00 - 11:00
-        {start: 660, end: 870, type: "NotPlanned"},  // 11:00 - 14:30
-        {start: 870, end: 1260, type: "Definite"},   // 14:30 - 21:00
-        {start: 1260, end: 1440, type: "NotPlanned"} // 21:00 - 00:00
-    ];
+    // 1. Отримуємо дані з нашої Google Таблиці через бот
+    let liveStatusText = ""; 
+    try {
+        const liveResp = await fetch(WEB_APP_URL);
+        const liveData = await liveResp.json();
+        // Якщо в таблиці щось написано - беремо це
+        if (liveData && liveData.info) liveStatusText = liveData.info;
+    } catch (e) {
+        console.warn("Помилка з'єднання з Google Sheet, працюємо тільки за графіком Ясно");
+    }
 
+    // 2. Отримуємо графік Ясно
+    let hoursArray = [];
     try {
         const targetUrl = "https://api.yasno.com.ua/api/v1/pages/schedule/kyiv";
         const proxy = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);
         const resp = await fetch(proxy);
-        
-        if (!resp.ok) throw new Error("API Offline");
-        
         const data = await resp.json();
-        if (data && data.schedule) {
-            const myHrs = data.schedule.find(s => s.group === MY_GROUP).hours;
-            render(groupHours(myHrs));
-            console.log("Дані отримано автоматично через проксі!");
-            return;
-        }
-        throw new Error("Data Format Error");
-
+        hoursArray = data.schedule.find(s => s.group === MY_GROUP).hours;
     } catch (e) {
-        console.warn("Автоматика заблокована (DNS/WAF), вмикаю ручний графік:", e.message);
-        
-        // Конвертуємо хвилини в години для рендеру
-        const fallback = rawData.map(item => ({
-            s: Math.floor(item.start / 60),
-            e: Math.floor(item.end / 60),
-            t: item.type === "Definite" ? 2 : 1
-        }));
-
-        render(fallback);
+        // Резервний графік (якщо Ясно не віддає дані)
+        hoursArray = new Array(24).fill(0);
     }
+
+    // 3. Формуємо 24 години
+    let intervals = [];
+    for (let i = 0; i < 24; i++) {
+        intervals.push({s: i, e: i + 1, t: hoursArray[i]});
+    }
+
+    render(intervals, liveStatusText);
 }
 
-function groupHours(hours) {
-    let res = []; let start = 0;
-    for (let i = 1; i <= 24; i++) {
-        if (i === 24 || hours[i] !== hours[start]) {
-            res.push({s: start, e: i, t: hours[start]});
-            start = i;
-        }
-    }
-    return res;
-}
-
-function render(intervals) {
+function render(intervals, liveStatusText) {
     const tbody = document.getElementById('outage-tbody');
     const now = new Date().getHours();
-    let html = ""; let isDark = false;
+    let html = ""; 
+    let isDark = false;
+
+    // Парсимо цифри з бота (наприклад "8, 9, 14")
+    const offHours = liveStatusText.split(/[\s,]+/)
+                                   .map(h => parseInt(h))
+                                   .filter(h => !isNaN(h));
 
     intervals.forEach(slot => {
         const isActive = now >= slot.s && now < slot.e;
-        const isOff = (slot.t === 'off' || slot.t === 2 || slot.t === '2');
-        if (isActive && isOff) isDark = true;
         
-        // Форматуємо час для таблиці
+        // Визначаємо стан: якщо бот не пустий, пріоритет за ним, інакше за Ясно
+        const isOffByYasno = (slot.t === 'off' || slot.t === 2 || slot.t === '2');
+        const isOffByBot = offHours.includes(slot.s);
+        
+        const isOff = offHours.length > 0 ? isOffByBot : isOffByYasno;
+        let statusLabel = isOff ? '🌑 Немає' : '💡 Є';
+
+        if (isActive) {
+            statusLabel += ' (Фактично)';
+            isDark = isOff; 
+        }
+        
         const time = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
         
         html += `<tr class="${isActive ? 'row-active' : ''}">
             <td style="padding:12px">${MY_GROUP}</td>
             <td style="padding:12px">${time}</td>
             <td style="padding:12px" class="${isOff ? 'status-off' : 'status-on'}">
-                ${isOff ? '🌑 Немає' : '💡 Є'}
+                ${statusLabel}
             </td>
         </tr>`;
     });
 
     tbody.innerHTML = html;
     
-    // Ефект затемнення фону, якщо світла немає зараз
+    // Затемнення фону сайту
     const bg = document.querySelector('.cd-bg-video-wrapper');
     if (bg) bg.style.filter = isDark ? "brightness(0.25) contrast(1.1)" : "brightness(1)";
 }
 
-// Запуск при завантаженні сторінки
+// Запуск
 fetchSchedule();
+// Автооновлення кожні 2 хвилини
+setInterval(fetchSchedule, 120000); 
 </script>
 		
 </body>
 
 </html>
+
 
 
 
