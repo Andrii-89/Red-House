@@ -489,99 +489,62 @@ http://www.tooplate.com/view/2088-big-city
 
 <script>
 const MY_GROUP = "1.1";
-// ВСТАВ СЮДИ СВІЙ URL ВІД GOOGLE SCRIPT (той, що закінчується на /exec)
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwvAdU6Wt3YP6JOe6KwjvOPyWBV2DMBNgnMNFYh4gDG0b2kRNGdUagxNCcVLn3WFX94/exec"; 
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwvAdU6Wt3YP6JOe6KwjvOPyWBV2DMBNgnMNFYh4gDG0b2kRNGdUagxNCcVLn3WFX94/exec";
 
 async function fetchSchedule() {
     const tbody = document.getElementById('outage-tbody');
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px;">Завантаження...</td></tr>';
-
-    // 1. Отримуємо дані з нашої Google Таблиці через бот
     let liveStatusText = ""; 
+
     try {
         const liveResp = await fetch(WEB_APP_URL);
         const liveData = await liveResp.json();
-        // Якщо в таблиці щось написано - беремо це
+        // Припускаємо, що Google Script повертає текст у полі 'info'
         if (liveData && liveData.info) liveStatusText = liveData.info;
     } catch (e) {
-        console.warn("Помилка з'єднання з Google Sheet, працюємо тільки за графіком Ясно");
+        console.warn("Помилка зв'язку з Google Sheet");
     }
 
-    // 2. Отримуємо графік Ясно
-    let hoursArray = [];
-    try {
-        const targetUrl = "https://api.yasno.com.ua/api/v1/pages/schedule/kyiv";
-        const proxy = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);
-        const resp = await fetch(proxy);
-        const data = await resp.json();
-        hoursArray = data.schedule.find(s => s.group === MY_GROUP).hours;
-    } catch (e) {
-        // Резервний графік (якщо Ясно не віддає дані)
-        hoursArray = new Array(24).fill(0);
-    }
-
-    // 3. Формуємо 24 години
-    let intervals = [];
-    for (let i = 0; i < 24; i++) {
-        intervals.push({s: i, e: i + 1, t: hoursArray[i]});
-    }
-
-    render(intervals, liveStatusText);
+    render(liveStatusText);
 }
 
-function render(intervals, liveStatusText) {
+function render(liveStatusText) {
     const tbody = document.getElementById('outage-tbody');
-    const now = new Date().getHours();
-    let html = ""; 
-    let isDark = false;
-
-    // Парсимо цифри з бота (наприклад "8, 9, 14")
-    const offHours = liveStatusText.split(/[\s,]+/)
-                                   .map(h => parseInt(h))
-                                   .filter(h => !isNaN(h));
-
-    intervals.forEach(slot => {
-        const isActive = now >= slot.s && now < slot.e;
-        
-        // Визначаємо стан: якщо бот не пустий, пріоритет за ним, інакше за Ясно
-        const isOffByYasno = (slot.t === 'off' || slot.t === 2 || slot.t === '2');
-        const isOffByBot = offHours.includes(slot.s);
-        
-        const isOff = offHours.length > 0 ? isOffByBot : isOffByYasno;
-        let statusLabel = isOff ? '🌑 Немає' : '💡 Є';
-
-        if (isActive) {
-            statusLabel += ' (Фактично)';
-            isDark = isOff; 
-        }
-        
-        const time = `${String(slot.s).padStart(2, '0')}:00 - ${String(slot.e).padStart(2, '0')}:00`;
-        
-        html += `<tr class="${isActive ? 'row-active' : ''}">
-            <td style="padding:12px">${MY_GROUP}</td>
-            <td style="padding:12px">${time}</td>
-            <td style="padding:12px" class="${isOff ? 'status-off' : 'status-on'}">
-                ${statusLabel}
-            </td>
-        </tr>`;
-    });
-
-    tbody.innerHTML = html;
-    
-    // Затемнення фону сайту
     const bg = document.querySelector('.cd-bg-video-wrapper');
-    if (bg) bg.style.filter = isDark ? "brightness(0.25) contrast(1.1)" : "brightness(1)";
+    // Розділяємо рядок за комою або пробілом, прибираємо все, крім цифр
+    const offHours = liveStatusText.split(/[\s,]+/).map(h => parseInt(h)).filter(h => !isNaN(h));
+
+    if (offHours.length === 0) {
+        // Режим спокою: світлий фон, повідомлення про відсутність відключень
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:40px;">
+            <h2 style="color: #44ff44; margin-bottom:10px;">✅ На сьогодні відключень не заплановано</h2>
+            <p style="color: #fff;">Графік енергопостачання стабільний.</p>
+        </td></tr>`;
+        if (bg) bg.style.filter = "brightness(1)";
+    } else {
+        // Режим відключень: темний фон, список годин
+        let html = "";
+        offHours.sort((a, b) => a - b).forEach(hour => {
+            const time = `${String(hour).padStart(2, '0')}:00 - ${String(hour + 1).padStart(2, '0')}:00`;
+            html += `<tr>
+                <td style="padding:15px">${MY_GROUP}</td>
+                <td style="padding:15px">${time}</td>
+                <td style="padding:15px; color: #ff4444; font-weight:bold;">🌑 Немає</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+        if (bg) bg.style.filter = "brightness(0.2) contrast(1.2)";
+    }
 }
 
-// Запуск
+// Запуск при завантаженні та оновлення кожну хвилину
 fetchSchedule();
-// Автооновлення кожні 2 хвилини
-setInterval(fetchSchedule, 120000); 
+setInterval(fetchSchedule, 60000); 
 </script>
 		
 </body>
 
 </html>
+
 
 
 
