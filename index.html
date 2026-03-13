@@ -493,57 +493,61 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwvAdU6Wt3YP6JOe6Kw
 
 async function fetchSchedule() {
     const tbody = document.getElementById('outage-tbody');
-    let liveStatusText = ""; 
-
     try {
-        const liveResp = await fetch(WEB_APP_URL);
-        const liveData = await liveResp.json();
-        // Припускаємо, що Google Script повертає текст у полі 'info'
-        if (liveData && liveData.info) liveStatusText = liveData.info;
+        // Додаємо випадковий параметр до URL, щоб обійти кешування браузером
+        const response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
+        const data = await response.json();
+        
+        console.log("Отримані дані:", data.info); // Для перевірки в консолі (F12)
+        render(data.info || "");
     } catch (e) {
-        console.warn("Помилка зв'язку з Google Sheet");
+        console.error("Помилка завантаження:", e);
     }
-
-    render(liveStatusText);
 }
 
 function render(liveStatusText) {
     const tbody = document.getElementById('outage-tbody');
     const bg = document.querySelector('.cd-bg-video-wrapper');
-    // Розділяємо рядок за комою або пробілом, прибираємо все, крім цифр
-    const offHours = liveStatusText.split(/[\s,]+/).map(h => parseInt(h)).filter(h => !isNaN(h));
+    
+    // Очищаємо текст від випадкових символів і розбиваємо на числа
+    const offHours = liveStatusText.toString()
+        .replace(/[^0-9, ]/g, '') // Залишаємо тільки цифри, коми та пробіли
+        .split(/[\s,]+/)
+        .map(h => parseInt(h))
+        .filter(h => !isNaN(h));
 
     if (offHours.length === 0) {
-        // Режим спокою: світлий фон, повідомлення про відсутність відключень
+        // Стан: СВІТЛО Є
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:40px;">
-            <h2 style="color: #44ff44; margin-bottom:10px;">✅ На сьогодні відключень не заплановано</h2>
-            <p style="color: #fff;">Графік енергопостачання стабільний.</p>
+            <div style="font-size: 50px; margin-bottom: 20px;">✅</div>
+            <h2 style="color: #44ff44; font-size: 24px;">На сьогодні відключень не заплановано</h2>
+            <p style="color: #ccc; font-size: 14px;">Графік енергопостачання стабільний.</p>
         </td></tr>`;
-        if (bg) bg.style.filter = "brightness(1)";
+        if (bg) bg.style.filter = "brightness(1) grayscale(0)";
     } else {
-        // Режим відключень: темний фон, список годин
+        // Стан: ВІДКЛЮЧЕННЯ
         let html = "";
         offHours.sort((a, b) => a - b).forEach(hour => {
             const time = `${String(hour).padStart(2, '0')}:00 - ${String(hour + 1).padStart(2, '0')}:00`;
             html += `<tr>
-                <td style="padding:15px">${MY_GROUP}</td>
-                <td style="padding:15px">${time}</td>
-                <td style="padding:15px; color: #ff4444; font-weight:bold;">🌑 Немає</td>
+                <td style="padding:15px; border-bottom: 1px solid rgba(255,255,255,0.1);">${MY_GROUP}</td>
+                <td style="padding:15px; border-bottom: 1px solid rgba(255,255,255,0.1);">${time}</td>
+                <td style="padding:15px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #ff4444; font-weight:bold;">🌑 Немає</td>
             </tr>`;
         });
         tbody.innerHTML = html;
-        if (bg) bg.style.filter = "brightness(0.2) contrast(1.2)";
+        if (bg) bg.style.filter = "brightness(0.3) contrast(1.2) grayscale(0.5)";
     }
 }
 
-// Запуск при завантаженні та оновлення кожну хвилину
 fetchSchedule();
-setInterval(fetchSchedule, 60000); 
+setInterval(fetchSchedule, 30000); // Оновлюємо кожні 30 секунд
 </script>
 		
 </body>
 
 </html>
+
 
 
 
