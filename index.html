@@ -151,14 +151,16 @@ http://www.tooplate.com/view/2088-big-city
     <div class="tm-bg-white tm-textbox-padding tm-height-100">
         <h2 class="tm-text-title tm-text-title-small tm-header-margin-b">Погода в м. Київ</h2>
         
-        <div class="tm-bg-white tm-textbox-padding tm-height-100">
-    <h2 class="tm-text-title tm-text-title-small tm-header-margin-b">Погода в м. Київ</h2>
-    
-    <div id="weather-container" style="margin-top: 15px;">
-        <a class="weatherwidget-io" href="https://forecast7.com/uk/50d4530d52/kyiv/" data-label_1="КИЇВ" data-label_2="ПОГОДА" data-theme="original" >КИЇВ ПОГОДА</a>
-        <script>
-            !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io');
-        </script>
+        <div id="weather-container" style="margin-top: 15px;">
+            <a class="weatherwidget-io" 
+               href="https://forecast7.com/uk/50d4530d52/kyiv/" 
+               data-label_1="КИЇВ" 
+               data-label_2="ПОГОДА" 
+               data-theme="original">КИЇВ ПОГОДА</a>
+            <script>
+                !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src='https://weatherwidget.io/js/widget.min.js';fjs.parentNode.insertBefore(js,fjs);}}(document,'script','weatherwidget-io');
+            </script>
+        </div>
     </div>
 </div>
         
@@ -572,6 +574,7 @@ setInterval(fetchSchedule, 30000); // Оновлюємо кожні 30 секу�
 </body>
 
 </html>
+
 
 
 
