@@ -504,24 +504,52 @@ const MY_GROUP = "1.1";
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwvAdU6Wt3YP6JOe6KwjvOPyWBV2DMBNgnMNFYh4gDG0b2kRNGdUagxNCcVLn3WFX94/exec";
 
 async function fetchSchedule() {
-    const tbody = document.getElementById('outage-tbody');
     try {
-        // Додаємо випадковий параметр до URL, щоб обійти кешування браузером
         const response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
         const data = await response.json();
         
-        console.log("Отримані дані:", data.info); // Для перевірки в консолі (F12)
-        render(data.info || "");
+        // Передаємо в рендер і текст (info), і статус (status)
+        render(data.info || "", data.status || "PLAN");
     } catch (e) {
         console.error("Помилка завантаження:", e);
     }
 }
 
-function render(liveStatusText) {
+function render(liveStatusText, status) {
     const tbody = document.getElementById('outage-tbody');
     const bg = document.querySelector('.cd-bg-video-wrapper');
+    const container = document.querySelector('.tm-bg-dark-blue'); // блок з таблицею
     const currentHour = new Date().getHours();
-    
+
+    // Скидаємо стилі за замовчуванням
+    if (bg) bg.style.filter = "brightness(0.8)";
+    container.style.background = "rgba(12, 31, 68, 0.7)"; // ваш стандартний синій
+    container.style.border = "none";
+
+    // --- РЕЖИМ 1: ЕКСТРЕННІ ВІДКЛЮЧЕННЯ ---
+    if (status === "EMERGENCY") {
+        if (bg) bg.style.filter = "brightness(0.2) sepia(1) hue-rotate(-50deg)"; // ефект тривоги
+        container.style.background = "rgba(80, 0, 0, 0.9)"; // темно-червоний блок
+        container.style.border = "2px solid red";
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:40px; color:#ff4d4d;">
+            <h2 style="margin-bottom:10px;">⚠️ ЕКСТРЕННІ ВІДКЛЮЧЕННЯ</h2>
+            <p style="color:white;">Графіки наразі не діють. Світло відключено позапланово.</p>
+        </td></tr>`;
+        return;
+    }
+
+    // --- РЕЖИМ 2: СВІТЛО Є (ОК) ---
+    if (status === "ALL_LIGHT") {
+        if (bg) bg.style.filter = "brightness(1.1)"; // робимо яскравіше
+        container.style.background = "rgba(0, 50, 0, 0.7)"; // темно-зелений блок
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:40px;">
+            <h2 style="color:#44ff44;">✅ СВІТЛО Є</h2>
+            <p style="color:white;">Обмежень електроенергії наразі немає.</p>
+        </td></tr>`;
+        return;
+    }
+
+    // --- РЕЖИМ 3: ПЛАНОВИЙ ГРАФІК (якщо введено години) ---
     const hours = liveStatusText.toString().split(/[\s,]+/)
         .map(h => parseInt(h))
         .filter(h => !isNaN(h))
@@ -529,11 +557,9 @@ function render(liveStatusText) {
 
     if (hours.length === 0) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:40px;"><h2>✅ На сьогодні відключень не заплановано</h2></td></tr>`;
-        if (bg) bg.style.filter = "brightness(1)";
         return;
     }
 
-    // 1. Групуємо години в інтервали
     let intervals = [];
     let currentBlock = [hours[0]];
     for (let i = 1; i < hours.length; i++) {
@@ -542,7 +568,6 @@ function render(liveStatusText) {
     }
     intervals.push(currentBlock);
 
-    // 2. Генеруємо HTML для всіх інтервалів
     let html = "";
     let isCurrentlyOff = false;
 
@@ -550,20 +575,17 @@ function render(liveStatusText) {
         const start = block[0];
         const end = block[block.length - 1] + 1;
         const nowInBlock = currentHour >= start && currentHour < end;
-        
         if (nowInBlock) isCurrentlyOff = true;
 
         html += `
             <tr style="${nowInBlock ? 'background: rgba(255,0,0,0.2);' : ''}">
                 <td style="padding:15px">${MY_GROUP}</td>
                 <td style="padding:15px">${start}:00 - ${end}:00</td>
-                <td style="padding:15px">${nowInBlock ? '🌑 Немає' : '⏳ Очікується відключення'}</td>
+                <td style="padding:15px">${nowInBlock ? '🌑 Немає' : '⏳ Очікується'}</td>
             </tr>`;
     });
 
     tbody.innerHTML = `<table style="width:100%; color:white;">${html}</table>`;
-    
-    // 3. Керуємо яскравістю
     if (bg) bg.style.filter = isCurrentlyOff ? "brightness(0.3)" : "brightness(0.8)";
 }
 
