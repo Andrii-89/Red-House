@@ -620,10 +620,6 @@ setInterval(fetchSchedule, 30000); // Оновлюємо кожні 30 секу�
 async function fetchCurrency() {
     try {
         const response = await fetch(CURRENCY_URL);
-	{
-    method: 'GET',
-    redirect: 'follow' // Додаємо цей рядок
-});
         const data = await response.json();
         
         if(data.usd && data.eur) {
