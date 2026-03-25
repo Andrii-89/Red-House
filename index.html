@@ -615,6 +615,25 @@ function render(liveStatusText, status) {
 
 fetchSchedule();
 setInterval(fetchSchedule, 30000); // Оновлюємо кожні 30 секунд
+
+	// --- СКРИПТ ДЛЯ КУРСУ ВАЛЮТ ---
+async function fetchCurrency() {
+    try {
+        const response = await fetch(CURRENCY_URL);
+        const data = await response.json();
+        
+        if(data.usd && data.eur) {
+            document.getElementById('usd-rate').innerText = data.usd + " ₴";
+            document.getElementById('eur-rate').innerText = data.eur + " ₴";
+        }
+    } catch (e) {
+        console.error("Помилка валют:", e);
+    }
+}
+
+fetchCurrency(); // Запускаємо при відкритті сайту
+setInterval(fetchCurrency, 3600000); // Оновлюємо раз на годину (щоб не перевантажувати)
+	
 </script>
 		
 </body>
