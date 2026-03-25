@@ -525,7 +525,8 @@ http://www.tooplate.com/view/2088-big-city
 <script>
 const MY_GROUP = "1.1";
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwvAdU6Wt3YP6JOe6KwjvOPyWBV2DMBNgnMNFYh4gDG0b2kRNGdUagxNCcVLn3WFX94/exec";
-
+const CURRENCY_URL = "https://script.google.com/macros/s/AKfycbzFxQOSXK7yXEdOpS7AayXDnzS6124gxUyBXezuSjcwjSWJ_BaCY81WyVEityrAYN985Q/exec";
+	
 async function fetchSchedule() {
     try {
         const response = await fetch(WEB_APP_URL + "?t=" + new Date().getTime());
