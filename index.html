@@ -619,28 +619,23 @@ setInterval(fetchSchedule, 30000); // Оновлюємо кожні 30 секу�
 	// --- СКРИПТ ДЛЯ КУРСУ ВАЛЮТ (ОНОВЛЕНИЙ) ---
 async function fetchCurrency() {
     try {
-        const response = await fetch(CURRENCY_URL, {
-            method: 'GET',
-            mode: 'cors'
-        });
-        
+        const response = await fetch(CURRENCY_URL + "?t=" + new Date().getTime());
         const data = await response.json();
         
-        // Перевіряємо наявність даних перед записом
         const usdEl = document.getElementById('usd-rate');
         const eurEl = document.getElementById('eur-rate');
         
         if (data.usd && usdEl) usdEl.innerText = data.usd + " ₴";
         if (data.eur && eurEl) eurEl.innerText = data.eur + " ₴";
-        
     } catch (e) {
-        console.error("Помилка отримання валют:", e);
+        console.error("Помилка валют:", e);
     }
 }
 
-// Запускаємо відразу
-fetchCurrency();
-// Оновлюємо кожну годину
+// 3. Просто виклик функції (БЕЗ слова const перед ним)
+fetchCurrency(); 
+
+// 4. Інтервал
 setInterval(fetchCurrency, 3600000);
 	
 </script>
