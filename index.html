@@ -525,7 +525,6 @@ http://www.tooplate.com/view/2088-big-city
 <script>
 const MY_GROUP = "1.1";
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwvAdU6Wt3YP6JOe6KwjvOPyWBV2DMBNgnMNFYh4gDG0b2kRNGdUagxNCcVLn3WFX94/exec";
-const CURRENCY_URL = "https://script.google.com/macros/s/AKfycbzFxQOSXK7yXEdOpS7AayXDnzS6124gxUyBXezuSjcwjSWJ_BaCY81WyVEityrAYN985Q/exec";
 	
 async function fetchSchedule() {
     try {
@@ -615,6 +614,9 @@ function render(liveStatusText, status) {
 
 fetchSchedule();
 setInterval(fetchSchedule, 30000); // Оновлюємо кожні 30 секунд
+
+const CURRENCY_URL = "https://script.google.com/macros/s/AKfycbw4kdkTAksjtKRFpcf-NuBGkZ92lLCnR1EcAjFoSrXpizcANSgAdHm6jToMKy_1eW_X-w/exec";
+
 
 	// --- СКРИПТ ДЛЯ КУРСУ ВАЛЮТ (ОНОВЛЕНИЙ) ---
 async function fetchCurrency() {
