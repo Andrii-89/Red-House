@@ -618,26 +618,29 @@ setInterval(fetchSchedule, 30000); // Оновлюємо кожні 30 секу�
 const CURRENCY_URL = "https://script.google.com/macros/s/AKfycbw4kdkTAksjtKRFpcf-NuBGkZ92lLCnR1EcAjFoSrXpizcANSgAdHm6jToMKy_1eW_X-w/exec";
 
 
-	// --- СКРИПТ ДЛЯ КУРСУ ВАЛЮТ (ОНОВЛЕНИЙ) ---
+	// 2. Сама функція
 async function fetchCurrency() {
+    console.log("Запуск функції fetchCurrency..."); 
     try {
-        const response = await fetch(CURRENCY_URL + "?t=" + new Date().getTime());
+        const response = await fetch(CURRENCY_URL + "?t=" + Date.now());
         const data = await response.json();
-        
+        console.log("Дані з Google отримано:", data);
+
         const usdEl = document.getElementById('usd-rate');
         const eurEl = document.getElementById('eur-rate');
+
+        if (data.usd && usdEl) usdEl.innerText = data.usd + " грн";
+        if (data.eur && eurEl) eurEl.innerText = data.eur + " грн";
         
-        if (data.usd && usdEl) usdEl.innerText = data.usd + " ₴";
-        if (data.eur && eurEl) eurEl.innerText = data.eur + " ₴";
-    } catch (e) {
-        console.error("Помилка валют:", e);
+    } catch (err) {
+        console.error("Помилка всередині функції:", err);
     }
 }
 
-// 3. Просто виклик функції (БЕЗ слова const перед ним)
-fetchCurrency(); 
+// 3. Викликаємо негайно
+fetchCurrency();
 
-// 4. Інтервал
+// 4. Оновлюємо щогодини
 setInterval(fetchCurrency, 3600000);
 	
 </script>
