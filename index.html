@@ -615,33 +615,29 @@ function render(liveStatusText, status) {
 fetchSchedule();
 setInterval(fetchSchedule, 30000); // Оновлюємо кожні 30 секунд
 
-const CURRENCY_URL = "https://script.google.com/macros/s/AKfycbw4kdkTAksjtKRFpcf-NuBGkZ92lLCnR1EcAjFoSrXpizcANSgAdHm6jToMKy_1eW_X-w/exec";
+	// --- НОВИЙ БЛОК ВАЛЮТ ---
+const BANK_URL = "https://script.google.com/macros/s/AKfycbw4kdkTAksjtKRFpcf-NuBGKz92llCnR1EcAjFoSrXpizcANSgAdHm6jToMKy_1eW_X-w/exec";
 
-
-	// 2. Сама функція
-async function fetchCurrency() {
-    console.log("Запуск функції fetchCurrency..."); 
+async function getBankRates() {
+    console.log("Запуск оновлення курсів...");
     try {
-        const response = await fetch(CURRENCY_URL + "?t=" + Date.now());
+        const response = await fetch(BANK_URL + "?t=" + Date.now());
         const data = await response.json();
-        console.log("Дані з Google отримано:", data);
+        console.log("Дані отримано:", data);
 
-        const usdEl = document.getElementById('usd-rate');
-        const eurEl = document.getElementById('eur-rate');
+        const usdBox = document.getElementById('usd-rate');
+        const eurBox = document.getElementById('eur-rate');
 
-        if (data.usd && usdEl) usdEl.innerText = data.usd + " грн";
-        if (data.eur && eurEl) eurEl.innerText = data.eur + " грн";
-        
+        if (data.usd && usdBox) usdBox.innerText = data.usd + " грн";
+        if (data.eur && eurBox) eurBox.innerText = data.eur + " грн";
     } catch (err) {
-        console.error("Помилка всередині функції:", err);
+        console.error("Помилка завантаження валют:", err);
     }
 }
 
-// 3. Викликаємо негайно
-fetchCurrency();
-
-// 4. Оновлюємо щогодини
-setInterval(fetchCurrency, 3600000);
+// Запуск
+getBankRates();
+setInterval(getBankRates, 3600000);
 	
 </script>
 		
