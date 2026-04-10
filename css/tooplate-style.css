@@ -637,3 +637,29 @@ border-top-color: #f9c922; /* Chrome, Opera 15+, Safari 5+ */ animation: spin 1.
 .status-on { color: #44ff44 !important; font-weight: bold; }
 .status-off { color: #ff4444 !important; font-weight: bold; }
 
+/* Фікс для блоку контактів на мобільних */
+@media only screen and (max-width: 480px) {
+    /* Робимо заголовок малим і дозволяємо перенос */
+    .tm-contact-info h3.tm-text-title {
+        font-size: 1.1rem !important;
+        line-height: 1.4 !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        display: block !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* Дозволяємо контейнеру розширюватися вниз, щоб текст не обрізався */
+    .tm-textbox-padding-contact {
+        padding: 20px !important;
+        height: auto !important; 
+        min-height: 200px !important;
+    }
+
+    /* Виправляємо відступи в синьому блоці */
+    .tm-contact-container {
+        flex-direction: column !important;
+        height: auto !important;
+    }
+}
+
