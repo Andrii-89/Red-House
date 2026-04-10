@@ -56,18 +56,26 @@ http://www.tooplate.com/view/2088-big-city
     </style>
 
 	<style>
-    /* Примусове виправлення для заголовка ОСББ */
-    .tm-contact-page .tm-text-title {
-        font-size: 22px !important; /* Розмір для комп'ютера */
+    .osbb-title-fix {
+        color: #00e6ff !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5) !important;
+        margin-bottom: 30px !important;
+        /* Адаптивний шрифт */
+        font-size: 24px !important; 
+        line-height: 1.2 !important;
+        display: block !important;
         word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
         white-space: normal !important;
+        width: 100% !important;
     }
 
-    /* Спеціально для телефонів */
     @media only screen and (max-width: 480px) {
-        .tm-contact-page h3.tm-text-title {
-            font-size: 16px !important; /* Зменшуємо до мінімуму для мобілок */
-            line-height: 1.4 !important;
+        .osbb-title-fix {
+            font-size: 16px !important; /* На телефоні буде маленьким */
+            margin-bottom: 15px !important;
         }
     }
 </style>
