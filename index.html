@@ -79,6 +79,35 @@ http://www.tooplate.com/view/2088-big-city
         }
     }
 </style>
+
+	<style>
+    /* ФІКС ГОЛОВНОЇ СТОРІНКИ ДЛЯ ТЕЛЕФОНІВ */
+    @media only screen and (max-width: 480px) {
+        /* Зменшуємо головний заголовок на банері */
+        .cd-hero-slider h2 {
+            font-size: 1.5rem !important;
+            margin-bottom: 10px !important;
+        }
+
+        /* Зменшуємо опис під заголовком */
+        .cd-hero-slider p {
+            font-size: 0.9rem !important;
+            line-height: 1.4 !important;
+            margin-bottom: 20px !important;
+        }
+
+        /* Коригуємо відступи всієї секції, щоб вона влізла в екран */
+        .cd-full-width {
+            padding-top: 10% !important;
+        }
+
+        /* Робимо кнопки (якщо вони є) компактнішими */
+        .tm-btn {
+            padding: 10px 20px !important;
+            font-size: 0.8rem !important;
+        }
+    }
+</style>
 </head>
 
     <body>
