@@ -65,6 +65,27 @@ http://www.tooplate.com/view/2088-big-city
     }
 }
 </style>
+
+	<style>
+    /* БЕЗПЕЧНИЙ ФІКС ШАПКИ ТІЛЬКИ ДЛЯ ТЕЛЕФОНІВ */
+    @media only screen and (max-width: 767px) {
+        .cd-slider-nav .navbar-brand {
+            font-size: 17px !important;       /* Зменшуємо шрифт, щоб влізло */
+            white-space: nowrap !important;   /* Суворо забороняємо розривати на 2 рядки */
+            margin-top: 12px !important;      /* Опускаємо текст трохи нижче, щоб не обрізався */
+            line-height: 1 !important;
+        }
+        
+        .cd-slider-nav .tm-navbar-bg {
+            padding-bottom: 15px !important;  /* Додаємо трохи червоного простору знизу */
+        }
+        
+        .navbar-toggler {
+            margin-top: 5px !important;       /* Вирівнюємо кнопку меню відносно тексту */
+        }
+    }
+</style>
+	
 </head>
 
     <body>
