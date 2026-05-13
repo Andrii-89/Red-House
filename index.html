@@ -32,74 +32,52 @@ http://www.tooplate.com/view/2088-big-city
           <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
           <![endif]-->
 <style>
-       /* 1. Робимо навігацію червоною */
-    .tm-navbar-bg { background-color: rgba(180, 0, 0, 0.9) !important; }
-
-    /* 2. Виправляємо "зелений" на синій + ефект скла (Ваш запит) */
-    .tm-home-description-container.tm-bg-dark-blue {
-        background-color: rgba(12, 31, 68, 0.85) !important; /* Глибокий синій */
-        backdrop-filter: blur(5px); /* Розмиття фону за блоком */
+    /* --- 1. ПРАЦЮЮЧІ СТИЛІ (БЕЗ ЗМІН) --- */
+    .tm-navbar-bg { 
+        background-color: rgba(180, 0, 0, 0.9) !important; 
     }
-
-    /* 3. Виправляємо коричневий заголовок на червоний */
+    .tm-home-description-container.tm-bg-dark-blue {
+        background-color: rgba(12, 31, 68, 0.85) !important;
+        backdrop-filter: blur(5px);
+    }
     .tm-home-title-container { 
         background-color: #b22222 !important; 
     }
-
-    /* 4. Кольори для таблиці та статусів */
     .status-on { color: #2ecc71; font-weight: bold; }
     .status-off { color: #e74c3c; font-weight: bold; }
     .row-active { 
         background: rgba(255, 215, 0, 0.15) !important; 
         border-left: 5px solid gold; 
     }
-    </style>
 
-	<style>
+    /* --- 2. ФІКС ГОЛОВНОГО НАПИСУ ДЛЯ ПК --- */
+    .cd-slider-nav .navbar-brand {
+        margin-top: 0 !important; /* Прибираємо задирання вгору, що є в шаблоні */
+        display: flex !important;
+        align-items: center !important;
+        height: 100% !important;
+        font-size: 28px !important;
+        padding: 0 15px !important;
+    }
+
+    /* --- 3. ФІКС ДЛЯ КОНТАКТНОГО БЛОКУ (osbb-title-fix) --- */
     .osbb-title-fix {
         color: #00e6ff !important;
         font-weight: bold !important;
         text-transform: uppercase !important;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.5) !important;
-        margin-bottom: 30px !important;
-        /* Адаптивний шрифт */
         font-size: 24px !important; 
         line-height: 1.2 !important;
-        display: block !important;
         word-wrap: break-word !important;
-        overflow-wrap: break-word !important;
         white-space: normal !important;
-        width: 100% !important;
     }
 
+    /* --- 4. СПЕЦІАЛЬНО ДЛЯ ТЕЛЕФОНІВ (Мобільна версія) --- */
     @media only screen and (max-width: 480px) {
-        .osbb-title-fix {
-            font-size: 16px !important; /* На телефоні буде маленьким */
-            margin-bottom: 15px !important;
-        }
-    }
-</style>
-
-	<style>
-    /* Фікс для логотипу в шапці на телефонах */
-    @media only screen and (max-width: 480px) {
-        .navbar-brand {
-            font-size: 16px !important; /* Зменшуємо шрифт до 16 пікселів */
-            white-space: nowrap !important; /* Забороняємо розрив рядка */
-            letter-spacing: -0.5px !important; /* Трохи звужуємо відстань між літерами */
-            padding-left: 5px !important;
-            padding-right: 5px !important;
-            display: inline-block !important;
-            max-width: 100% !important;
-        }
-        
-        /* Зменшуємо відступи навколо логотипу, щоб дати йому більше місця */
+        /* Опускаємо шапку і напис нижче */
         .tm-navbar-bg {
-            padding-left: 10px !important;
-            padding-right: 10px !important;
-        }
-    }
-</style>
+            padding-top: 15px !important; 
+            padding-bottom: 10px !important
 	
 </head>
 
