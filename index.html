@@ -84,6 +84,19 @@ http://www.tooplate.com/view/2088-big-city
             margin-top: 5px !important;       /* Вирівнюємо кнопку меню відносно тексту */
         }
     }
+
+		/* Зменшуємо кнопки меню на телефонах */
+    @media only screen and (max-width: 767px) {
+        .cd-slider-nav a, 
+        .navbar-nav .nav-link {
+            font-size: 16px !important; /* Робимо шрифт меншим і акуратнішим */
+            height: auto !important; /* Дозволяємо кнопці підлаштовуватися під текст */
+            padding: 12px 15px !important; /* Робимо комфортні відступи */
+            line-height: 1.2 !important;
+            width: 100% !important;
+        }
+    }
+		
 </style>
 	
 </head>
